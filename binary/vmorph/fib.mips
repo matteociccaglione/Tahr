@@ -1,0 +1,26 @@
+fibonacci_ricorsivo(short):
+        addiu   $sp, $sp, -32
+        sw      $ra, 28($sp)
+        sw      $17, 24($sp)
+        sw      $16, 20($sp)
+        move    $16, $4
+        addiu   $17, $zero, 0
+$BB0_1:
+        seh     $1, $16
+        slti    $1, $1, 2
+        bnez    $1, $BB0_3
+        nop
+        addiu   $1, $16, -1
+        jal     fibonacci_ricorsivo(short)
+        seh     $4, $1
+        addu    $17, $17, $2
+        j       $BB0_1
+        addiu   $16, $16, -2
+$BB0_3:
+        addu    $1, $17, $16
+        seh     $2, $1
+        lw      $16, 20($sp)
+        lw      $17, 24($sp)
+        lw      $ra, 28($sp)
+        jr      $ra
+        addiu   $sp, $sp, 32

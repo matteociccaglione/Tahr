@@ -1,0 +1,4 @@
+# TODO
+
+Add a "parse" function that can start the parsing of an input stream.
+Add a way to get output from grow. Actually grow can do the work (not tested) but the output is not visible (maybe an output stream?)

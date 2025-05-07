@@ -1,0 +1,2 @@
+/usr/bin/ar qc libbfg.a CMakeFiles/bfg.dir/error/error.c.o CMakeFiles/bfg.dir/internal/stack.c.o CMakeFiles/bfg.dir/internal/symbols.c.o CMakeFiles/bfg.dir/internal/util.c.o CMakeFiles/bfg.dir/internal/n_symbols.c.o CMakeFiles/bfg.dir/internal/gen_code.c.o CMakeFiles/bfg.dir/internal/attributes.c.o CMakeFiles/bfg.dir/internal/rulefunc.c.o CMakeFiles/bfg.dir/bfg.tab.c.o CMakeFiles/bfg.dir/bfg.yylex.c.o
+/usr/bin/ranlib libbfg.a

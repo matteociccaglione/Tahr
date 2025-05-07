@@ -1,0 +1,9 @@
+src/parser/*.tab.c
+src/parser/*.tab.h
+src/parser/*.yy.c
+src/parser/*.yy.h
+
+build/
+.cache
+binary/vmorph/build
+binary/x86/build

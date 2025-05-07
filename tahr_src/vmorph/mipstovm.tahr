@@ -1,0 +1,1054 @@
+%%
+
+// Translation
+%symbol seh_t,reg,reg1,reg,dest;
+%symbol move_t,reg,reg1,reg,dest;
+%symbol add_r_r_t,reg,reg1,reg,reg2,reg,dest;
+%symbol sub_r_r_t,reg,reg1,reg,reg2,reg,dest;
+%symbol add_r_i_t,reg,reg1,num,imm,reg,dest;
+%symbol mul_r_r_t,reg,reg1,reg,reg2;
+%symbol div_r_r_t,reg,reg1,reg,reg2;
+%symbol load_dw_t,reg,dest,num,offset,reg,base;
+%symbol load_w_t,reg,dest,num,offset,reg,base;
+%symbol load_h_t,reg,dest,num,offset,reg,base;
+%symbol load_b_t,reg,dest,num,offset,reg,base;
+%symbol load_b_u_t,reg,dest,num,offset,reg,base;
+%symbol store_d_t,reg,source,num,offset,reg,base;
+%symbol store_w_t,reg,source,num,offset,reg,base;
+%symbol store_h_t,reg,source,num,offset,reg,base;
+%symbol store_b_t,reg,source,num,offset,reg,base;
+%symbol move_h_t,reg,dest;
+%symbol move_l_t,reg,dest;
+%symbol and_r_r_t,reg,reg1,reg,reg2,reg,dest;
+%symbol and_r_i_t,reg,reg1,num,imm,reg,dest;
+%symbol or_r_r_t,reg,reg1,reg,reg2,reg,dest;
+%symbol or_r_i_t,reg,reg1,num,imm,reg,dest;
+%symbol xor_r_r_t,reg,reg1,reg,reg2,reg,dest;
+%symbol nor_r_r_t,reg,reg1,reg,reg2,reg,dest;
+%symbol set_l_r_r_t,reg,reg1,reg,reg2,reg,dest,num,sign;
+%symbol set_l_r_i_t,reg,reg1,num,imm,reg,dest;
+%symbol shift_l_t,reg,reg1,num,imm,reg,dest;
+%symbol shift_r_t,reg,reg1,num,imm,reg,dest;
+%symbol branch_eq_r_r_t,reg,reg1,label,address,reg,reg2,num,sign;
+%symbol branch_lt_t,reg,reg1,label,address,reg,reg2,num,sign;
+%symbol branch_ge_t,reg,reg1,label,address,reg,reg2,num,sign;
+%symbol branch_neq_r_r_t,reg,reg1,label,address,reg,reg2,num,sign;
+%symbol jump_t,label,address;
+%symbol jump_r_t,reg,reg1;
+%symbol call_t,label,address;
+%symbol load_i_t,reg,dest,num,imm;
+%symbol muh_r_r_t,reg,dest,reg,reg1,reg,reg2;
+%symbol shift_ra_t,reg,dest,reg,reg1,num,imm;
+%symbol load_label,reg,dest,label,lab;
+%symbol load_data_label,reg,dest,label,lab,num,size;
+%symbol store_data_label,reg,src,label,lab,num,size;
+%symbol libc_t,num,code;
+%symbol vm_add_r_i_big,reg,reg1,num,imm;
+%%
+// Empty repr section
+%%
+
+vm_add_r_i_big -> vm_add_r_i_big,vm_add_r_i_big{
+        if ($$.imm < 65536){
+                revert;
+        }
+        $1.reg1 = $$.reg1;
+        $1.imm = 65535;
+        $2.reg1 = $$.reg1;
+        $2.imm = $$.imm - $1.imm;
+
+} | vm_add_r_i{
+        if ($$.imm >= 65536){
+                revert;
+        }
+        $1.reg1 = $$.reg1;
+        $1.imm = $$.imm;
+
+};
+
+vm_mov_i -> vm_xor_r_r,vm_add_r_i{
+        if ($$.imm >= 65536){
+                revert;
+        }
+        $1.reg1 = $$.reg1;
+        $1.reg2 = $$.reg1;
+        $2.reg1 = $$.reg1;
+        $2.imm = $$.imm;
+} | vm_xor_r_r,vm_add_r_i,vm_add_r_i_big{
+        if ($$.imm < 65536){
+                revert;
+        }
+        $1.reg1 = $$.reg1;
+        $1.reg2 = $$.reg1;
+        $2.reg1 = $$.reg1;
+        $2.imm = 60000;
+        $3.reg1 = $$.reg1;
+        $3.imm = $$.imm - 60000;
+};
+
+libc_t -> vm_mov_i,vm_libc{
+        $1.reg1 = vreg_values[22];
+        $1.imm = $$.code;
+};
+
+shift_ra_t -> vm_prologue,vm_mov,vm_sar_r_i,vm_store_mem{
+
+        $1.reg1 = $$.reg1;
+        $1.reg2 = $$.dest;
+        $2.reg1 = get_mem_reg($$.dest);
+        $2.reg2 = get_mem_reg($$.reg1);
+        $3.reg1 = $2.reg1;
+        $3.imm = $$.imm;
+        $4.reg1 = $$.dest;
+};
+
+load_label -> vm_load_mem,vm_lea_r_m,vm_store_mem{
+        $1.reg1 = $$.dest;
+        $2.reg1 = get_mem_reg($$.dest);
+        $2.target = $$.lab;
+        $3.reg1 = $$.dest;
+};
+
+load_data_label -> vm_load_mem,vm_lea_r_m,vm_mov_i,vm_load_r_r,vm_store_mem{
+        $1.reg1 = $$.dest;
+        $2.reg1 = get_mem_reg($$.dest);
+        $2.target = $$.lab;
+        $3.reg1 = vreg_values[23];
+        $3.imm = $$.size;
+        $4.reg1 = $2.reg1;
+        $4.reg2 = $2.reg1;
+        $5.reg1 = $$.dest;
+};
+store_data_label -> vm_load_mem,vm_lea_r_m,vm_mov_i,vm_store_r_r{
+        $1.reg1 = $$.src;
+        $2.reg1 = vreg_values[16];
+        $2.target = $$.lab;
+        $3.reg1 = vreg_values[23];
+        $3.imm = $$.size;
+        $4.reg1 = get_mem_reg($$.src);
+        $4.reg2 = $2.reg1;
+};
+
+load_i_t -> vm_load_mem,vm_mov_i,vm_store_mem{
+        $1.reg1 = $$.dest;
+        $2.reg1 = $1.reg1;
+        $2.imm = $$.imm;
+        $3.reg1 = $$.dest;
+};
+
+seh_t -> vm_prologue,vm_mov,vm_shl_r_i,vm_sar_r_i,vm_store_mem{
+        $1.reg1 = $$.reg1;
+        $1.reg2 = $$.dest;
+        $2.reg1 = get_mem_reg($$.dest);
+        $2.reg2 = get_mem_reg($$.reg1);
+        $3.reg1 = get_mem_reg($$.dest);
+        $3.imm = 16;
+        $4.reg1 = get_mem_reg($$.dest);
+        $4.imm = 16;
+        $5.reg1 = $$.dest;
+};
+
+branch_ge_t -> vm_prologue,vm_mov_i,vm_ltgt,vm_je_r_r,vm_jlt_r_r{
+        $1.reg1 = $$.reg1;
+        $1.reg2 = $$.reg2;
+        $2.reg1 = vreg_values[23];
+        $2.imm = $$.sign;
+        $3.address = $$.address;
+        $4.reg1 = get_mem_reg($$.reg1);
+        $4.reg2 = get_mem_reg($$.reg2);
+        $5.reg1 = get_mem_reg($$.reg2);
+        $5.reg2 = get_mem_reg($$.reg1);
+};
+branch_lt_t -> vm_prologue,vm_ltgt,vm_mov_i,vm_jlt_r_r{
+        $1.reg1 = $$.reg1;
+        $1.reg2 = $$.reg2;
+        $3.reg1 = vreg_values[23];
+        $3.imm = $$.sign;
+        $2.address = $$.address;
+        $4.reg1 = get_mem_reg($$.reg1);
+        $4.reg2 = get_mem_reg($$.reg2);
+};
+
+muh_r_r_t -> vm_prologue,vm_mov,vm_load_mem,vm_mov,vm_v_arit,vm_shr_r_i,vm_store_mem{
+        $1.reg1 = $$.reg1;
+        $1.reg2 = $$.reg2;
+        $2.reg1 = vreg_values[16];
+        $2.reg2 = get_mem_reg($$.reg1);
+        release_mem_reg($$.reg1);
+        $3.reg1 = $$.dest;
+        $4.reg1 = get_mem_reg($$.dest);
+        $4.reg2 = get_mem_reg($$.reg2);
+        $5.imm = 0;
+        $5.reg1 = get_mem_reg($$.dest);
+        $6.reg1 = $5.reg1;
+        $6.imm = 32;
+        $7.reg1 = $$.dest; 
+};
+
+add_r_r_t -> vm_prologue,vm_mov,vm_load_mem,vm_add_r_r,vm_store_mem{
+        if ($$.dest == $$.reg1 || $$.dest == $$.reg2){
+                revert;
+        }
+        $1.reg1 = $$.dest;
+        $1.reg2 = $$.reg1;
+        $2.reg1 = get_mem_reg($$.dest);
+        $2.reg2 = get_mem_reg($$.reg1);
+        release_mem_reg($$.reg1);
+        $3.reg1 = $$.reg2;
+        $4.reg1 = get_mem_reg($$.dest);
+        $4.reg2 = get_mem_reg($$.reg2);
+        $5.reg1 = $$.dest;
+} | vm_add_r_r{
+        if ($$.dest != $$.reg1 && $$.dest!=$$.reg2){
+                revert;
+        }
+        if ($$.dest == $$.reg1){
+                $1.reg1 = $$.dest;
+                $1.reg2 = $$.reg2;
+        }
+        if ($$.dest == $$.reg2){
+                $1.reg1 = $$.dest;
+                $1.reg2 = $$.reg1;
+        }
+        if ($$.reg1 == $$.reg2){
+                $1.reg1 = $$.dest;
+                $1.reg2 = $$.dest;
+        }
+}
+;
+// D = R1 - R2
+sub_r_r_t -> vm_xor_r_r,vm_load_mem,vm_add_r_r,vm_load_mem,vm_neg_r,vm_add_r_r,vm_mov,vm_store_mem{
+        $1.reg1 = vreg_values[16];
+        $1.reg2 = vreg_values[16];
+        $2.reg1 = $$.reg2;
+        $3.reg1 = vreg_values[16];
+        $3.reg2 = get_mem_reg($$.reg2);
+        $4.reg1 = get_mem_reg($$.reg1);
+        $5.reg1 = vreg_values[16];
+        $6.reg1 = vreg_values[16];
+        $6.reg2 = get_mem_reg($$.reg1);
+        release_mem_regs();
+        $7.reg1=get_mem_reg($$.dest);
+        $7.reg2 = vreg_values[16];
+        $8.reg1 = $$.dest;
+};
+
+add_r_i_t -> vm_prologue,vm_mov,vm_add_r_i,vm_store_mem{
+        if ($$.imm < 0 || $$.imm >= 65536){
+                revert;
+        }
+        $1.reg1 = $$.dest;
+        $1.reg2 = $$.reg1;
+        $2.reg1 = get_mem_reg($$.dest);
+        $2.reg2 = get_mem_reg($$.reg1);
+        $3.reg1 = get_mem_reg($$.dest);
+        $3.imm = $$.imm;
+        $4.reg1 = $$.dest;
+        release_mem_regs();
+} | vm_prologue,vm_mov,vm_mov_i,vm_neg_r,vm_add_r_r,vm_store_mem{
+        if ($$.imm >= 0){
+                revert;
+        }
+        $$.imm = $$.imm*(-1);
+        $1.reg1 = $$.dest;
+        $1.reg2 = $$.reg1;
+        $2.reg1 = get_mem_reg($$.dest);
+        $2.reg2 = get_mem_reg($$.reg1);
+        $3.imm = $$.imm;
+        $3.reg1 = vreg_values[16];
+        $4.reg1 = vreg_values[16];
+        $5.reg2 = vreg_values[16];
+        $5.reg1 = get_mem_reg($$.dest);
+        $6.reg1 = $$.dest;
+} | add_r_i_t,add_r_i_t{
+        if ($$.imm < 65536){
+                revert;
+        }
+        $1.imm = 65535;
+        $2.imm = $$.imm - $1.imm;
+        $1.dest = $$.dest;
+        $1.reg1 = $$.reg1;
+        $2.dest = $$.dest;
+        $2.reg1 = $$.reg1;
+};
+
+
+mul_r_r_t -> vm_mov,vm_mov,vm_v_arit,vm_mov,vm_shr_r_i,vm_and_r_i{
+        $1.reg2 = $$.reg2;
+        $1.reg1 = map_register(reg_values[31]);
+        $2.reg2 = $$.reg2;
+        $2.reg1 = vreg_values[16];
+        $3.imm = 0;
+        $3.reg1 = $1.reg1;
+        $4.reg1 = map_register(reg_values[30]);
+        $4.reg2 = $1.reg1;
+        $5.reg1 = $4.reg1;
+        $5.imm = 32;
+        $6.reg1 = $1.reg1;
+        $6.imm = 4294967295;
+};
+
+div_r_r_t -> vm_prologue,vm_mov,vm_v_arit{
+        $1.reg1 = $$.reg1;
+        $1.reg2 = $$.reg2;
+        $2.reg1 = map_register(reg_values[31]);
+        $2.reg2 = get_mem_reg($$.reg1);        
+        $3.imm = 1;
+        $3.reg1 = get_mem_reg($$.reg2);
+        release_mem_regs();
+};
+
+load_dw_t -> vm_prologue,vm_mov_i,vm_add_r_r,vm_mov_i,vm_load_r_r{
+        $1.reg1 = $$.dest;
+        $1.reg2 = $$.base;
+        $2.reg1 = vreg_values[16];
+        $2.imm = $$.offset;
+        $3.reg2 = get_mem_reg($$.base);
+        $3.reg1 = vreg_values[16];
+        $4.reg1 = vreg_values[23];
+        $4.imm = 64;
+        $5.reg1 = get_mem_reg($$.dest);
+        $5.reg2 = vreg_values[16];
+        release_mem_regs();
+};
+load_w_t -> vm_prologue,vm_mov,vm_add_r_i,vm_mov_i,vm_load_r_r{
+        $1.reg1 = $$.dest;
+        $1.reg2 = $$.base;
+        $2.reg1 = vreg_values[16];
+        $2.reg2 = get_mem_reg($$.base);
+        $3.reg1 = vreg_values[16];
+        $3.imm = $$.offset;
+        $4.reg1 = vreg_values[23];
+        $4.imm = 32;
+        $5.reg1 = get_mem_reg($$.dest);
+        $5.reg2 = vreg_values[16];
+        release_mem_regs();
+};
+load_h_t -> vm_prologue,vm_mov,vm_add_r_i,vm_mov_i,vm_load_r_r{
+        $1.reg1 = $$.dest;
+        $1.reg2 = $$.base;
+        $2.reg1 = vreg_values[16];
+        $2.reg2 = get_mem_reg($$.base);
+        $3.reg1 = vreg_values[16];
+        $3.imm = $$.offset;
+        $4.reg1 = vreg_values[23];
+        $4.imm = 16;
+        $5.reg1 = get_mem_reg($$.dest);
+        $5.reg2 = vreg_values[16];
+        release_mem_regs();
+};
+load_b_t -> vm_prologue,vm_mov,vm_add_r_i,vm_mov_i,vm_load_r_r{
+        $1.reg1 = $$.dest;
+        $1.reg2 = $$.base;
+        $2.reg1 = vreg_values[16];
+        $2.reg2 = get_mem_reg($$.base);
+        $3.reg1 = vreg_values[16];
+        $3.imm = $$.offset;
+        $4.reg1 = vreg_values[23];
+        $4.imm = 8;
+        $5.reg1 = get_mem_reg($$.dest);
+        $5.reg2 = vreg_values[16];
+        release_mem_regs();
+};
+load_b_u_t -> vm_prologue,vm_mov,vm_add_r_i,vm_mov_i,vm_load_r_r{
+        $1.reg1 = $$.dest;
+        $1.reg2 = $$.base;
+        $2.reg1 = vreg_values[16];
+        $2.reg2 = get_mem_reg($$.base);
+        $3.reg1 = vreg_values[16];
+        $3.imm = $$.offset;
+        $4.reg1 = vreg_values[23];
+        $4.imm = 9;
+        $5.reg1 = get_mem_reg($$.dest);
+        $5.reg2 = vreg_values[16];
+        release_mem_regs();
+};
+and_r_r_t -> vm_prologue,vm_mov,vm_load_mem,vm_and_r_r,vm_store_mem {
+        $1.reg1 = $$.dest;
+        $1.reg2 = $$.dest;
+        $2.reg1 = get_mem_reg($$.dest);
+        $2.reg2 = get_mem_reg($$.reg1);
+        release_mem_reg($$.reg1);
+        $3.reg1 = $$.reg2;
+        $4.reg1 = get_mem_reg($$.dest);
+        $4.reg2 = get_mem_reg($$.reg2);
+        $5.reg1 = $$.dest;
+        release_mem_regs();
+};
+
+and_r_i_t -> vm_prologue,vm_mov,vm_and_r_i,vm_store_mem{
+        $1.reg1 = $$.dest;
+        $1.reg2 = $$.reg1;
+        $2.reg1 = get_mem_reg($$.dest);
+        $2.reg2 = get_mem_reg($$.reg1);
+        $3.reg1 = get_mem_reg($$.dest);
+        $3.imm =  $$.imm;
+        $4.reg1 = $$.dest;
+        release_mem_regs();
+
+};
+or_r_r_temp -> vm_mov,vm_not_r,vm_load_mem,vm_not_r,vm_and_r_r,vm_not_r,vm_not_r{
+
+        $1.reg1 = get_mem_reg($$.dest);
+        $1.reg2 = get_mem_reg($$.reg1);
+        release_mem_reg($$.reg1);
+        $2.reg1 = get_mem_reg($$.dest);
+        $3.reg1 = $$.reg2;
+        $4.reg1 = get_mem_reg($$.reg2);
+        $5.reg1 = get_mem_reg($$.dest);
+        $5.reg2 = get_mem_reg($$.reg2);
+        $6.reg1 = get_mem_reg($$.reg2);
+        $7.reg1 = get_mem_reg($$.dest);
+};
+or_r_r_t -> vm_prologue,or_r_r_temp,vm_store_mem{
+        $1.reg1 = $$.dest;
+        $1.reg2 = $$.reg1;
+        $2.dest = $$.dest;
+        $2.reg1 = $$.reg1;
+        $2.reg2 = $$.reg2;
+        $3.reg1 = $$.dest;
+        release_mem_regs();
+};
+
+
+or_r_i_t -> vm_prologue,vm_mov_i,or_r_r_temp,vm_mov,vm_store_mem{
+        $1.reg1 = $$.dest;
+        $1.reg2 = $$.reg1;
+        $2.reg1 = vreg_values[16]; 
+        $2.imm = $$.imm;
+        $3.reg1 = vreg_values[16];
+        $3.dest = vreg_values[16];
+        $3.reg2 = $$.reg1;
+        $4.reg1 = get_mem_reg($$.dest);
+        $4.reg2 = vreg_values[16];
+        $5.reg1 = $$.dest;
+        release_mem_regs();
+};
+
+xor_r_r_t -> vm_prologue,vm_mov,vm_load_mem,vm_xor_r_r,vm_store_mem{
+        $1.reg1 = $$.dest;
+        $1.reg2 = $$.reg1;
+        $2.reg1 = get_mem_reg($$.dest);
+        $2.reg2 = get_mem_reg($$.reg1);
+        release_mem_reg($$.reg1);
+        $3.reg1 = $$.reg2;
+        $4.reg1 = get_mem_reg($$.dest);
+        $4.reg2 = get_mem_reg($$.reg2);
+        $5.reg1 = $$.dest;
+        release_mem_regs();
+};
+
+store_d_t -> vm_prologue,vm_mov,vm_add_r_i,vm_mov_i,vm_store_r_r{
+        $1.reg1 = $$.source;
+        $1.reg2 = $$.base;
+        $2.reg1 = vreg_values[16];
+        $2.reg2 = get_mem_reg($$.base);
+        $3.reg1 = vreg_values[16];
+        $3.imm = $$.offset;
+        $4.reg1 = vreg_values[23];
+        $4.imm = 64;
+        $5.reg1 = get_mem_reg($$.source);
+        $5.reg2 = vreg_values[16];
+        release_mem_regs();
+};
+
+store_w_t -> vm_prologue,vm_mov,vm_add_r_i,vm_mov_i,vm_store_r_r{
+        
+        $1.reg1 = $$.source;
+        $1.reg2 = $$.base;
+        $2.reg1 = vreg_values[16];
+        $2.reg2 = get_mem_reg($$.base);
+        $3.reg1 = vreg_values[16];
+        $3.imm = $$.offset;
+        $4.reg1 = vreg_values[23];
+        $4.imm = 32;
+        $5.reg1 = get_mem_reg($$.source);
+        $5.reg2 = vreg_values[16];
+        release_mem_regs();
+};
+store_h_t -> vm_prologue,vm_mov,vm_add_r_i,vm_mov_i,vm_store_r_r{
+        
+        $1.reg1 = $$.source;
+        $1.reg2 = $$.base;
+        $2.reg1 = vreg_values[16];
+        $2.reg2 = get_mem_reg($$.base);
+        $3.reg1 = vreg_values[16];
+        $3.imm = $$.offset;
+        $4.reg1 = vreg_values[23];
+        $4.imm = 16;
+        $5.reg1 = get_mem_reg($$.source);
+        $5.reg2 = vreg_values[16];
+        release_mem_regs();
+};
+store_b_t -> vm_prologue,vm_mov,vm_add_r_i,vm_mov_i,vm_store_r_r{
+        
+        $1.reg1 = $$.source;
+        $1.reg2 = $$.base;
+        $2.reg1 = vreg_values[16];
+        $2.reg2 = get_mem_reg($$.base);
+        $3.reg1 = vreg_values[16];
+        $3.imm = $$.offset;
+        $4.reg1 = vreg_values[23];
+        $4.imm = 8;
+        $5.reg1 = get_mem_reg($$.source);
+        $5.reg2 = vreg_values[16];
+        release_mem_regs();
+};
+//Restart from here
+shift_l_t -> vm_prologue,vm_mov,vm_shl_r_i,vm_store_mem{
+        $1.reg1 = $$.reg1;
+        $1.reg2 = $$.dest;
+        $2.reg1 = get_mem_reg($$.dest);
+        $2.reg2 = get_mem_reg($$.reg1);
+        $3.reg1 = get_mem_reg($$.dest);
+        $3.imm = $$.imm;
+        $4.reg1 = $$.dest;
+        release_mem_regs();
+
+};
+
+shift_r_t -> vm_prologue,vm_mov,vm_shr_r_i,vm_store_mem{
+
+        $1.reg1 = $$.reg1;
+        $1.reg2 = $$.dest;
+        $2.reg1 = get_mem_reg($$.dest);
+        $2.reg2 = get_mem_reg($$.reg1);
+        $3.reg1 = get_mem_reg($$.dest);
+        $3.imm = $$.imm;
+        $4.reg1 = $$.dest;
+        release_mem_regs();
+
+};
+
+branch_eq_r_r_t -> vm_prologue,vm_ltgt,vm_je_r_r{
+        $1.reg1 = $$.reg1;
+        $1.reg2 = $$.reg2;
+        $2.address = $$.address;
+        $3.reg1 = get_mem_reg($$.reg1);
+        $3.reg2 = get_mem_reg($$.reg2);
+        release_mem_regs();
+
+};
+
+branch_neq_r_r_t -> vm_prologue,vm_mov_i,vm_ltgt,vm_jlt_r_r,vm_jlt_r_r{
+        $1.reg1 = $$.reg1;
+        $1.reg2 = $$.reg2;
+        $2.reg1 = vreg_values[23];
+        $2.imm = $$.sign;
+        $3.address = $$.address;
+        $4.reg1 = get_mem_reg($$.reg1);
+        $4.reg2 = get_mem_reg($$.reg2);
+        $5.reg1 = get_mem_reg($$.reg2);
+        $5.reg2 = get_mem_reg($$.reg1);
+        release_mem_regs();
+};
+
+jump_t -> vm_ltgt,vm_jmp{
+
+        $1.address = $$.address;
+
+};
+
+jump_r_t -> vm_load_mem,vm_mov,vm_jmp{
+        $1.reg1 = $$.reg1;
+        $2.reg1 = vreg_values[19];
+        $2.reg2 = get_mem_reg($$.reg1);
+        release_mem_regs();
+
+};
+
+call_t -> vm_ltgt,vm_call{
+        if (is_libc($$.address)){
+                revert;
+        }
+        $1.address = $$.address;
+
+} | libc_t {
+
+        if (!is_libc($$.address)){
+                revert;
+        }
+        $1.code = get_libc_code($$.address);
+
+};
+nor_r_r_t -> vm_prologue,or_r_r_temp,vm_not_r,vm_store_mem{
+        $1.reg1 = $$.reg1;
+        $1.reg2 = $$.reg2;
+        $2.reg1 = get_mem_reg($$.reg1);
+        $2.reg2 = get_mem_reg($$.reg2);
+        $2.dest = $$.dest;
+        $3.reg1 = get_mem_reg($$.dest);
+        $4.reg1 = $$.dest;
+        release_mem_regs();
+};
+la_r_a_t -> vm_load_mem,vm_lea_r_m,vm_store_mem{
+        $1.reg1 = $$.reg1;
+        $2.reg1 = get_mem_reg($$.reg1);
+        $2.target = $$.target;
+        $3.reg1 = $$.reg1;
+        release_mem_regs();
+};
+
+set_l_r_i_t -> vm_prologue,vm_ltgt,vm_jlt_r_i,vm_mov_i,vm_ltgt,vm_jmp,code_label,vm_mov_i,code_label,vm_store_mem{
+               $1.reg1 = $$.dest;
+               $1.reg2 = $$.reg1;
+               $2.address = create_label();
+               $3.reg1 = get_mem_reg($$.reg1);
+               $3.imm = $$.imm;
+               $4.reg1 = get_mem_reg($$.dest);
+               $4.imm = 0;
+               $5.address = create_label();
+               $7.text = $2.address;
+               $8.reg1 = get_mem_reg($$.dest);
+               $8.imm = 1;
+               $9.text = $5.address;
+               $10.reg1 = $$.dest;
+};
+set_l_r_r_t -> vm_prologue,vm_ltgt,vm_mov_i,vm_jlt_r_r,vm_mov_i,vm_ltgt,vm_jmp,code_label,vm_mov_i,code_label,vm_store_mem{
+               $1.reg1 = $$.dest;
+               $1.reg2 = $$.reg1;
+               $2.address = create_label();
+               $3.reg1 = vreg_values[23];
+               $3.imm = $$.sign;
+               $4.reg1 = get_mem_reg($$.reg1);
+               $4.reg2 = get_mem_reg($$.reg2);
+               $5.reg1 = get_mem_reg($$.dest);
+               $5.imm = 0;
+               $6.address = create_label();
+               $8.text = $2.address;
+               $9.reg1 = get_mem_reg($$.dest);
+               $9.imm = 1;
+               $10.text = $6.address;
+               $11.reg1 = $$.dest;
+};
+
+%%
+// Trans section
+add_r_r <-> add_r_r_t {
+        $1.reg1 = map_register($$.reg1);
+        $1.reg2 = map_register($$.reg2);
+        $1.dest = map_register($$.dest);
+};
+load_label <- lui_r_m,daddiu_r_m,dsll,daddiu_r_m,dsll,daddiu_r_m{
+        if (!(strcmp($1.lab,$2.lab) == 0  && strcmp($4.lab,$6.lab) == 0)){
+                revert;
+        }
+        $$.dest = map_register($6.dest);
+        $$.lab = $1.lab;
+};
+load_data_label <- lui_r_m,daddiu_r_m,dsll,daddiu_r_m,dsll,load_dw_lab{
+        if (!(strcmp($1.lab,$2.lab) == 0  && strcmp($4.lab,$6.lab) == 0)){
+                revert;
+        }
+        $$.dest = map_register($6.dest);
+        $$.lab = $1.lab;
+        $$.size = 64;
+};
+load_data_label <- lui_r_m,daddiu_r_m,dsll,daddiu_r_m,dsll,load_w_lab{
+        if (!(strcmp($1.lab,$2.lab) == 0  && strcmp($4.lab,$6.lab) == 0)){
+                revert;
+        }
+        $$.dest = map_register($6.dest);
+        $$.lab = $1.lab;
+        $$.size = 32;
+};
+store_data_label <- lui_r_m,daddiu_r_m,dsll,daddiu_r_m,dsll,store_d_lab{
+        if (!(strcmp($1.lab,$2.lab) == 0  && strcmp($4.lab,$6.lab) == 0)){
+                revert;
+        }
+        $$.src = map_register($6.src);
+        $$.lab = $1.lab;
+        $$.size = 64;
+};
+store_data_label <- lui_r_m,daddiu_r_m,dsll,daddiu_r_m,dsll,store_w_lab{
+        if (!(strcmp($1.lab,$2.lab) == 0  && strcmp($4.lab,$6.lab) == 0)){
+                revert;
+        }
+        $$.src = map_register($6.src);
+        $$.lab = $1.lab;
+        $$.size = 32;
+};
+dadd_r_r <-> add_r_r_t {
+        $1.reg1 = map_register($$.reg1);
+        $1.reg2 = map_register($$.reg2);
+        $1.dest = map_register($$.dest);
+};
+addu_r_r <-> add_r_r_t {
+        $1.reg1 = map_register($$.reg1);
+        $1.reg2 = map_register($$.reg2);
+        $1.dest = map_register($$.dest);
+};
+daddu_r_r <-> add_r_r_t {
+        $1.reg1 = map_register($$.reg1);
+        $1.reg2 = map_register($$.reg2);
+        $1.dest = map_register($$.dest);
+};
+
+sub_r_r <-> sub_r_r_t {
+        $1.reg1 = map_register($$.reg1);
+        $1.reg2 = map_register($$.reg2);
+        $1.dest = map_register($$.dest);
+ 
+};
+subu_r_r <-> sub_r_r_t {
+        $1.reg1 = map_register($$.reg1);
+        $1.reg2 = map_register($$.reg2);
+        $1.dest = map_register($$.dest);
+ 
+};
+dsubu_r_r <-> sub_r_r_t {
+        $1.reg1 = map_register($$.reg1);
+        $1.reg2 = map_register($$.reg2);
+        $1.dest = map_register($$.dest);
+ 
+};
+
+add_r_i <-> add_r_i_t {
+        
+        $1.reg1 = map_register($$.reg1);
+        $1.imm = $$.imm;
+        $1.dest = map_register($$.dest);
+};
+dadd_r_i <-> add_r_i_t {
+        
+        $1.reg1 = map_register($$.reg1);
+        $1.imm = $$.imm;
+        $1.dest = map_register($$.dest);
+};
+daddu_r_i <-> add_r_i_t {
+        
+        $1.reg1 = map_register($$.reg1);
+        $1.imm = $$.imm;
+        $1.dest = map_register($$.dest);
+};
+
+load_i <-> load_i_t {
+        $1.dest = map_register($$.dest);
+        $1.imm = $$.imm;
+};
+
+muh_r_r <-> muh_r_r_t {
+        $1.reg1 = map_register($$.reg1);
+        $1.reg2 = map_register($$.reg2);
+        $1.dest = map_register($$.dest);
+};
+
+mul_r_r <-> mul_r_r_t {
+        $1.reg1 = map_register($$.reg1);
+        $1.reg2 = map_register($$.reg2);
+};
+
+div_r_r <-> div_r_r_t {
+        $1.reg1 = map_register($$.reg1);
+        $1.reg2 = map_register($$.reg2);
+};
+
+load_dw <-> load_dw_t {
+        $1.dest = map_register($$.dest);
+        $1.offset = $$.offset;
+        $1.base = map_register($$.base);
+};
+
+load_w <-> load_w_t {
+        
+        $1.dest = map_register($$.dest);
+        $1.offset = $$.offset;
+        $1.base = map_register($$.base);
+};
+
+load_h <-> load_h_t {
+        
+        $1.dest = map_register($$.dest);
+        $1.offset = $$.offset;
+        $1.base = map_register($$.base);
+
+};
+
+load_b <-> load_b_t {
+        
+        $1.dest = map_register($$.dest);
+        $1.offset = $$.offset;
+        $1.base = map_register($$.base);
+
+};
+load_b_u <-> load_b_u_t {
+        
+        $1.dest = map_register($$.dest);
+        $1.offset = $$.offset;
+        $1.base = map_register($$.base);
+
+};
+
+and_r_r <-> and_r_r_t {
+        $1.reg1 = map_register($$.reg1);
+        $1.reg2 = map_register($$.reg2);
+        $1.dest = map_register($$.dest);
+};
+
+and_r_i <-> and_r_i_t {
+        
+        $1.reg1 = map_register($$.reg1);
+        $1.imm  = $$.imm;
+        $1.dest = map_register($$.dest);
+};
+and_r_i_hex <-> and_r_i_t {
+        
+        $1.reg1 = map_register($$.reg1);
+        $1.imm  = $$.imm;
+        $1.dest = map_register($$.dest);
+};
+
+or_r_r <-> or_r_r_t {
+
+        $1.reg1 = map_register($$.reg1);
+        $1.reg2 = map_register($$.reg2);
+        $1.dest = map_register($$.dest);
+};
+
+or_r_i <-> or_r_i_t {
+
+        $1.reg1 = map_register($$.reg1);
+        $1.imm  = $$.imm;
+        $1.dest = map_register($$.dest);
+
+};
+or_r_i_hex <-> or_r_i_t {
+
+        $1.reg1 = map_register($$.reg1);
+        $1.imm  = $$.imm;
+        $1.dest = map_register($$.dest);
+
+};
+
+xor_r_r <-> xor_r_r_t {
+        
+        $1.reg1 = map_register($$.reg1);
+        $1.reg2 = map_register($$.reg2);
+        $1.dest = map_register($$.dest);
+
+};
+
+store_d <-> store_d_t{
+
+        $1.source = map_register($$.source);
+        $1.base = map_register($$.base);
+        $1.offset = $$.offset;
+};
+
+store_w <-> store_w_t{
+
+        $1.source = map_register($$.source);
+        $1.base = map_register($$.base);
+        $1.offset = $$.offset;
+};
+
+store_h <-> store_h_t{
+
+        $1.source = map_register($$.source);
+        $1.base = map_register($$.base);
+        $1.offset = $$.offset;
+};
+
+store_b <-> store_b_t{
+
+        $1.source = map_register($$.source);
+        $1.base = map_register($$.base);
+        $1.offset = $$.offset;
+};
+move_h <-> vm_mov{
+        $1.reg1 = map_register($$.dest);
+        $1.reg2 = map_register(reg_values[31]);
+};
+move_l <-> vm_mov{
+
+        $1.reg1 = map_register($$.dest);
+        $1.reg2 = map_register(reg_values[32]);
+};
+nor_r_r <-> nor_r_r_t{
+        $1.reg1 = map_register($$.reg1);
+        $1.reg2 = map_register($$.reg2);
+        $1.dest = map_register($$.dest);
+};
+
+shift_l <-> shift_l_t{
+        $1.reg1 = map_register($$.reg1);
+        $1.imm = $$.imm;
+        $1.dest = map_register($$.dest);
+};
+dsll <-> shift_l_t{
+        $1.reg1 = map_register($$.reg1);
+        $1.imm = $$.imm;
+        $1.dest = map_register($$.dest);
+};
+shift_r <-> shift_r_t{
+        $1.reg1 = map_register($$.reg1);
+        $1.imm = $$.imm;
+        $1.dest = map_register($$.dest);
+};
+dsrl <-> shift_r_t{
+        $1.reg1 = map_register($$.reg1);
+        $1.imm = $$.imm;
+        $1.dest = map_register($$.dest);
+};
+branch_eq_r_r <-> branch_eq_r_r_t{
+        $1.reg1 = map_register($$.reg1);
+        $1.reg2 = map_register($$.reg2);
+        $1.address = $$.address;
+        $1.sign = 1;
+};
+branch_eq_c <-> branch_eq_r_r_t{
+        $1.reg1 = map_register($$.reg1);
+        $1.reg2 = map_register($$.reg2);
+        $1.address = $$.target;
+        $1.sign = 1;
+};
+branch_eqz_c <-> branch_eq_r_r_t{
+        $1.reg1 = map_register($$.reg1);
+        $1.reg2 = map_register(reg_values[0]);
+        $1.address = $$.target;
+        $1.sign = 1;
+};
+
+branch_gez_c <-> branch_ge_t{
+        $1.reg1 = map_register($$.reg1);
+        $1.reg2 = map_register(reg_values[0]);
+        $1.address = $$.target;
+        $1.sign = 1;
+};
+branch_gtz_c <-> branch_lt_t{
+        $1.reg2 = map_register($$.reg1);
+        $1.reg1 = map_register(reg_values[0]);
+        $1.address = $$.target;
+        $1.sign = 1;
+};
+branch_ge_c <-> branch_ge_t{
+        $1.reg1 = map_register($$.reg1);
+        $1.reg2 = map_register($$.reg2);
+        $1.address = $$.target;
+        $1.sign = 1;
+};
+branch_geu_c <-> branch_ge_t{
+        $1.reg1 = map_register($$.reg1);
+        $1.reg2 = map_register($$.reg2);
+        $1.address = $$.target;
+        $1.sign = 0;
+};
+branch_neq_r_r <-> branch_neq_r_r_t{
+        $1.reg1 = map_register($$.reg1);
+        $1.reg2 = map_register($$.reg2);
+        $1.address = $$.address;
+        $1.sign = 1;
+};
+branch_neq_c <-> branch_neq_r_r_t{
+        $1.reg1 = map_register($$.reg1);
+        $1.reg2 = map_register($$.reg2);
+        $1.address = $$.target;
+        $1.sign = 1;
+};
+branch_nez_c <-> branch_neq_r_r_t{
+        $1.reg1 = map_register($$.reg1);
+        $1.reg2 = map_register(reg_values[0]);
+        $1.address = $$.target;
+        $1.sign = 1;
+};
+jump <-> jump_t{
+
+        $1.address = $$.address;
+
+};
+branch_c <-> jump_t{
+
+        $1.address = $$.target;
+
+};
+jump_r <-> jump_r_t{
+
+        $1.reg1 = map_register($$.reg1);
+
+};
+jump_r_c <-> jump_r_t{
+
+        $1.reg1 = map_register($$.reg1);
+
+};
+teq <-> libc_t{
+        $1.code = get_libc_code("abort"); 
+};
+
+branch_ltz_c <-> branch_lt_t{
+        $1.reg1 = map_register($$.reg1);
+        $1.reg2 = map_register(reg_values[0]);
+        $1.address = $$.target;
+        $1.sign = 1;
+};
+branch_lt_c <-> branch_lt_t{
+        $1.reg1 = map_register($$.reg1);
+        $1.reg2 = map_register($$.reg2);
+        $1.address = $$.target;
+        $1.sign = 1;
+};
+
+branch_ltu_c <-> branch_lt_t{
+        $1.reg1 = map_register($$.reg1);
+        $1.reg2 = map_register($$.reg2);
+        $1.address = $$.target;
+        $1.sign = 0;
+};
+
+shift_ra <-> shift_ra_t{
+        $1.reg1 = map_register($$.reg1);
+        $1.dest = map_register($$.dest);
+        $1.imm = $$.imm;
+};
+
+call <-> call_t{
+
+       $1.address = $$.address; 
+
+};
+balc <-> call_t{
+
+       $1.address = $$.target; 
+
+};
+
+la_r_a <-> la_r_a_t{
+        $1.reg1 = map_register($$.reg1);
+        $1.target = $$.target;
+};
+
+
+addu_r_i <-> add_r_i_t {
+        
+        $1.reg1 = map_register($$.reg1);
+        $1.imm = $$.imm;
+        $1.dest = map_register($$.dest);
+};
+set_l_r_i <-> set_l_r_i_t {
+        $1.reg1 = map_register($$.reg1);
+        $1.dest = map_register($$.dest);
+        $1.imm = $$.imm;
+};
+set_l_r_r <-> set_l_r_r_t {
+        $1.reg1 = map_register($$.reg1);
+        $1.dest = map_register($$.dest);
+        $1.reg2 = map_register($$.reg2);
+        $1.sign = 1;
+};
+set_l_r_r_u <-> set_l_r_r_t {
+        $1.reg1 = map_register($$.reg1);
+        $1.dest = map_register($$.dest);
+        $1.reg2 = map_register($$.reg2);
+        $1.sign = 0;
+};
+
+move <-> vm_mov {
+        $1.reg2 = map_register($$.src);
+        $1.reg1 = map_register($$.dest);
+};
+
+
+seh <-> seh_t {
+        $1.reg1 = map_register($$.reg1);
+        $1.dest = map_register($$.dest);
+};

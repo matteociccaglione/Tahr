@@ -1,0 +1,111 @@
+
+.LC54:	.ascii	"cabbie\000"
+.LC55:	.ascii	"your\000"
+.LC56:	.ascii	"It isn't here\000"
+.LC57:	.ascii	"But it is here\000"
+.LC58:	.ascii	"hodad\000"
+.LC59:	.ascii	"yoohoo\000"
+.LC60:	.ascii	".\000"
+.LC61:	.ascii	"In recent years, the field of photonic \000"
+.LC62:	.ascii	"crystals has found new\000"
+.LC63:	.ascii	"applications in the RF and microwave\000"
+.LC64:	.ascii	"regime. A new type of metallic\000"
+.LC65:	.ascii	"electromagnetic crystal has been\000"
+.LC66:	.ascii	"developed that is having a\000"
+.LC67:	.ascii	"significant impact on the field of\000"
+.LC68:	.ascii	"antennas. It consists of a\000"
+.LC69:	.ascii	"conductive surface, covered with a\000"
+.LC70:	.ascii	"special texture which alters its\000"
+.LC71:	.ascii	"electromagnetic properties. Made of solid\000"
+.LC72:	.ascii	"metal, the structure\000"
+.LC73:	.ascii	"conducts DC currents, but over a\000"
+.LC74:	.ascii	"particular frequency range it does\000"
+.LC75:	.ascii	"not conduct AC currents. It does not\000"
+.LC76:	.ascii	"reverse the phase of reflected\000"
+.LC77:	.ascii	"waves, and the effective image currents\000"
+.LC78:	.ascii	"appear in-phase, rather than\000"
+.LC79:	.ascii	"out-of-phase as they are on normal\000"
+.LC80:	.ascii	"conductors. Furthermore, surface\000"
+.LC81:	.ascii	"waves do not propagate, and instead\000"
+.LC82:	.ascii	"radiate efficiently into free\000"
+.LC83:	.ascii	"space. This new material, termed a\000"
+.LC84:	.ascii	"high-impedance surface, provides\000"
+.LC85:	.ascii	"a useful new ground plane for novel\000"
+.LC86:	.ascii	"low-profile antennas and other\000"
+.LC87:	.ascii	"electromagnetic structures.\000"
+.LC88:	.ascii	"The recent protests about the Michigamua\000"
+.LC89:	.ascii	"student organization have raised an\000"
+.LC90:	.ascii	"important question as to the proper nature\000"
+.LC91:	.ascii	"and scope of University involvement\000"
+.LC92:	.ascii	"with student organizations. Accordingly\000"
+.LC93:	.ascii	"the panel described in my Statement of\000"
+.LC94:	.ascii	"February 25, 2000 that is considering the\000"
+.LC95:	.ascii	"question of privileged space also will\000"
+.LC96:	.ascii	"consider under what circumstances and in\000"
+.LC97:	.ascii	"what ways the University, its\000"
+.LC98:	.ascii	"administrators and faculty members should\000"
+.LC99:	.ascii	"be associated with such organizations\000"
+.LC100:	.ascii	"and it will recommend guiding principles\000"
+.LC101:	.ascii	"in this regard. The University's\000"
+.LC102:	.ascii	"Executive Officers and I will then decide\000"
+.LC103:	.ascii	"whether and how to implement such\000"
+.LC104:	.ascii	"principles.\000"
+.LC107:	.array
+        .dword	.LC54
+	.dword	.LC55
+	.dword	.LC56
+	.dword	.LC57
+	.dword	.LC58
+	.dword	.LC59
+	.dword	.LC59
+	.dword	.LC59
+	.dword	.LC59
+	.dword	.LC59
+	.dword	.LC9
+	.dword	.LC10
+	.dword	.LC60
+	.dword	.LC61
+	.dword	.LC62
+	.dword	.LC63
+	.dword	.LC64
+	.dword	.LC65
+	.dword	.LC66
+	.dword	.LC67
+	.dword	.LC68
+	.dword	.LC69
+	.dword	.LC70
+	.dword	.LC71
+	.dword	.LC72
+	.dword	.LC73
+	.dword	.LC74
+	.dword	.LC75
+	.dword	.LC76
+	.dword	.LC77
+	.dword	.LC78
+	.dword	.LC79
+	.dword	.LC80
+	.dword	.LC81
+	.dword	.LC82
+	.dword	.LC83
+	.dword	.LC84
+	.dword	.LC85
+	.dword	.LC86
+	.dword	.LC87
+	.dword	.LC88
+	.dword	.LC89
+	.dword	.LC90
+	.dword	.LC91
+	.dword	.LC92
+	.dword	.LC93
+	.dword	.LC94
+	.dword	.LC95
+	.dword	.LC96
+	.dword	.LC97
+	.dword	.LC98
+	.dword	.LC99
+	.dword	.LC100
+	.dword	.LC101
+	.dword	.LC102
+	.dword	.LC103
+	.dword	.LC104
+        .endarray

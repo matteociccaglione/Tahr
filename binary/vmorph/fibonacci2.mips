@@ -1,0 +1,38 @@
+.text
+main:
+        addiu   $sp, $sp, -24
+        sw      $ra, 20($sp)
+        sw      $zero, 16($sp)
+        addiu   $a0, $zero, 5
+        jal     fibonacci_ricorsivo
+        nop 
+fibonacci_ricorsivo:
+        addiu   $sp, $sp, -32
+        sw      $ra, 28($sp)
+        sw      $a0, 20($sp)
+        lw      $a1, 20($sp)
+        slti    $a1, $a1, 2
+        beq     $a1, $zero, $BB0_3
+        j       $BB0_2
+$BB0_2:
+        lw      $a1, 20($sp)
+        sw      $a1, 24($sp)
+        j       $BB0_4
+$BB0_3:
+        lw      $a1, 20($sp)
+        addiu   $a0, $a1, -1
+        jal     fibonacci_ricorsivo
+        sw      $a2, 16($sp)
+        lw      $a1, 20($sp)
+        addiu   $a0, $a1, -2
+        jal     fibonacci_ricorsivo
+        move    $a1, $a2
+        lw      $a2, 16($sp)
+        addu    $a1, $a2, $a1
+        sw      $a1, 24($sp)
+        j       $BB0_4
+$BB0_4:
+        lw      $a2, 24($sp)
+        lw      $ra, 28($sp)
+        addiu   $sp, $sp, 32
+        jr      $ra

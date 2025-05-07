@@ -1,0 +1,64 @@
+%%
+%token IMOVSD_R_M,IMOVSD_M_R,ISUBSD_R_R,ICVTSI2SD_R_R,IMOVD_F_R,IMOVD_R_F,IDIVSD_R_R,IMULSD_R_R,IUCOMISS,ICOMISS,IUCOMISD,ICOMISD,ICVTTSD2SI,IMOVAPD_R_R,IADDSD_R_R,IMOVSD_LAB_R,IMOVSD_R_R,ANDPD_M;
+
+%attribute ifpreg,char*,"%xmm0","%xmm1","%xmm2","%xmm3","%xmm4","%xmm5","%xmm6","%xmm7","%xmm8","%xmm9","%xmm10","%xmm11","%xmm12","%xmm13","%xmm14","%xmm15";
+
+%symbol imovsd_r_m,ifpreg,src,num,offset,ireg,base;
+%symbol imovsd_r_r,ifpreg,src,ifpreg,dest;
+%symbol andpd_m,ifpreg,dest,hex,mask;
+%symbol imovsd_m_r,ifpreg,dest,num,offset,ireg,base;
+%symbol imovsd_lab_r,ifpreg,dest,label,offset,ireg,base;
+%symbol imovapd_r_r,ifpreg,src,ifpreg,dest;
+%symbol iaddsd_r_r,ifpreg,reg1,ifpreg,dest;
+%symbol isubsd_r_r,ifpreg,reg1,ifpreg,dest;
+%symbol icvtsi2sd_r_r,ifpreg,reg1,ifpreg,dest;
+%symbol icvttsd2si_r_r,ifpreg,reg1,ireg,dest;
+%symbol imovd_f_r,ifpreg,dest,ireg,src;
+%symbol imovd_r_f,ifpreg,src,ireg,dest;
+%symbol idivsd_r_r,ifpreg,reg1,ifpreg,dest;
+%symbol imulsd_r_r,ifpreg,reg1,ifpreg,dest;
+%symbol iucomiss_r_r,ifpreg,reg1,ifpreg,reg2;
+%symbol icomiss_r_r,ifpreg,reg1,ifpreg,reg2;
+%symbol iucomisd_r_r,ifpreg,reg1,ifpreg,reg2;
+%symbol icomisd_r_r,ifpreg,reg1,ifpreg,reg2;
+
+%%
+IMOVSD_R_R: "movsd" " " src "," dest ;
+ANDPD_M: "andpd" " " mask "," dest ;
+IMOVSD_LAB_R: "movsd" " " offset "(" base ")" "," dest ;
+IMOVAPD_R_R: "movapd" " " src "," dest ;
+IADDSD_R_R: "addsd" " " reg1 "," dest ;
+IMOVSD_R_M: "movsd" " " src "," offset "(" base ")" ;
+IMOVSD_M_R: "movsd" " " offset "(" base ")" "," dest ;
+ISUBSD_R_R: "subsd" " " reg1 "," dest ;
+ICVTSI2SD_R_R: "cvtsi2sd" " " reg1 "," dest ;
+ICVTTSD2SI: "cvttsd2si" " " reg1 "," dest ;
+IMOVD_F_R: "movd" " " src "," dest ;
+IMOVD_R_F: "movd" " " src "," dest ;
+IDIVSD_R_R: "divsd" " " reg1 "," dest ;
+IMULSD_R_R: "mulsd" " " reg1 "," dest ;
+IUCOMISS: "ucomiss" " " reg1 "," reg2 ;
+ICOMISS: "comiss" " " reg1 "," reg2 ;
+IUCOMISD: "ucomisd" " " reg1 "," reg2 ;
+ICOMISD: "comisd" " " reg1 "," reg2 ;
+
+%%
+andpd_m -> ANDPD_M;
+imovsd_lab_r -> IMOVSD_LAB_R;
+icvttsd2si_r_r -> ICVTTSD2SI;
+iaddsd_r_r -> IADDSD_R_R;
+imovapd_r_r -> IMOVAPD_R_R;
+imovsd_r_m -> IMOVSD_R_M;
+imovsd_m_r -> IMOVSD_M_R;
+isubsd_r_r -> ISUBSD_R_R;
+icvtsi2sd_r_r -> ICVTSI2SD_R_R;
+imovd_f_r -> IMOVD_F_R;
+imovd_r_f -> IMOVD_R_F;
+idivsd_r_r -> IDIVSD_R_R;
+imulsd_r_r -> IMULSD_R_R;
+iucomiss_r_r -> IUCOMISS;
+icomiss_r_r -> ICOMISS;
+iucomisd_r_r -> IUCOMISD;
+icomisd_r_r -> ICOMISD;
+imovsd_r_r -> IMOVSD_R_R;
+%%

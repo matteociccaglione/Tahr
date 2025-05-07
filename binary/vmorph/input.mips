@@ -1,0 +1,10 @@
+.text:
+main:
+    add $s0,$t0,$t1
+    jr $s0
+    ld $a0,40($a1)
+    or $t0,$t1,$t2
+    beq $a0,$a1,exit
+exit:
+    j main
+

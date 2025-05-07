@@ -1,0 +1,156 @@
+%%
+%token VM_ADD_R_I,VM_ADD_R_R,VM_AND_R_I,VM_AND_R_R,VM_JMP,VM_JE_R_I,VM_JE_R_R,VM_JLT_R_R,VM_JLT_R_I,VM_LOAD_R_R,VM_LOAD_R_I,VM_LTGT,VM_NOT_R,VM_NEG_R,VM_SHL_R_I,VM_SHR_R_I,VM_SAR_R_I,VM_STORE_R_R,VM_XOR_R_I,VM_XOR_R_R,VM_CALL,VM_RET,VM_PUSH_R,VM_PUSH_RET,VM_POP_R,VM_LEA_R_M,VM_V_ARIT,VM_LIBC;
+%attribute vreg,char*,"r0","r1","r2","r3","r4","r5","r6","r7","r8","r9","r10","r11","r12","r13","r14","r15","temp","rret","v0","tgt","sp","ip","rlibc","rsize","m0","m1","m2","m3","m4","m5","m6","m7","m8","m9","m10","m11","m12","m13";
+
+%symbol vm_add_r_r,reg,reg1,reg,reg2;
+%symbol vm_add_r_i,reg,reg1,num,imm;
+%symbol vm_and_r_i,reg,reg1,num,imm;
+%symbol vm_and_r_r,reg,reg1,reg,reg2;
+%symbol vm_jmp;
+%symbol vm_je_r_i,reg,reg1,num,imm;
+%symbol vm_je_r_r,reg,reg1,reg,reg2;
+%symbol vm_jlt_r_i,reg,reg1,num,imm;
+%symbol vm_jlt_r_r,reg,reg1,reg,reg2;
+%symbol vm_load_r_r,reg,reg1,reg,reg2;
+%symbol vm_load_r_i,reg,reg1,num,imm;
+%symbol vm_ltgt,label,address;
+%symbol vm_not_r,reg,reg1;
+%symbol vm_neg_r,reg,reg1;
+%symbol vm_shl_r_i,reg,reg1,num,imm;
+%symbol vm_shr_r_i,reg,reg1,num,imm;
+%symbol vm_sar_r_i,reg,reg1,num,imm;
+%symbol vm_store_r_r,reg,reg1,reg,reg2;
+%symbol vm_xor_r_i,reg,reg1,num,imm;
+%symbol vm_xor_r_r,reg,reg1,reg,reg2;
+%symbol vm_call;
+%symbol vm_ret;
+%symbol vm_push_r,reg,reg1;
+%symbol vm_push_ret;
+%symbol vm_pop_r,reg,reg1;
+%symbol vm_lea_r_m,reg,reg1,label,target;
+%symbol vm_v_arit,num,imm,reg,reg1;
+%symbol vm_syscall;
+// This is a fake instruction
+%symbol la_r_a_t,reg,reg1,label,target;
+%symbol vm_mov,reg,reg1,reg,reg2;
+%symbol vm_mov_i,reg,reg1,num,imm;
+%symbol vm_prologue,reg,reg1,reg,reg2;
+%symbol vm_store_mem,reg,reg1;
+%symbol vm_load_mem,reg,reg1;
+%symbol vm_epilogue,reg,reg1,reg,reg2;
+%symbol or_r_r_temp,reg,reg1,reg,reg2,reg,dest;
+%symbol vm_libc,num,code;
+%%
+VM_LIBC: "libc" ;
+VM_ADD_R_I: "add_r_i" " " reg1 "," imm ;
+VM_ADD_R_R: "add_r_r" " " reg1 "," reg2 ;
+VM_AND_R_I: "and_r_i" " " reg1 "," imm ;
+VM_AND_R_R: "and_r_r" " " reg1 "," reg2 ;
+VM_JMP: "jmp" ;
+VM_JE_R_I: "je_r_i" " " reg1 "," imm ;
+VM_JE_R_R: "je_r_r" " " reg1 "," reg2 ;
+VM_JLT_R_I: "jlt_r_i" " " reg1 "," imm ;
+VM_JLT_R_R: "jlt_r_r" " " reg1 "," reg2 ;
+VM_LOAD_R_R: "load_r_r" " " reg1 "," reg2 ;
+VM_LOAD_R_I: "load_r_i" " " reg1 "," imm ;
+VM_LTGT: "ltgt" " " address ;
+VM_NOT_R: "not_r" " " reg1 ;
+VM_NEG_R: "neg_r" " " reg1 ;
+VM_SHL_R_I: "shl_r_i" " " reg1 "," imm ;
+VM_SHR_R_I: "shr_r_i" " " reg1 "," imm ;
+VM_SAR_R_I: "sar_r_i" " " reg1 "," imm ;
+VM_STORE_R_R: "store_r_r" " " reg1 "," reg2 ;
+VM_XOR_R_I: "xor_r_i" " " reg1 "," imm ;
+VM_XOR_R_R: "xor_r_r" " " reg1 "," reg2 ;
+VM_CALL: "v_jal" ;
+VM_RET: "ret" ;
+VM_PUSH_R: "push_r" " " reg1 ;
+VM_PUSH_RET: "push_ret" ;
+VM_POP_R: "pop_r" " " reg1 ;
+VM_LEA_R_M: "lea_r_m" " " reg1 "," target ;
+VM_V_ARIT: "v_arit" " " imm "," reg1 ;
+%%
+vm_libc -> VM_LIBC;
+vm_add_r_r -> VM_ADD_R_R ;
+vm_add_r_i -> VM_ADD_R_I ;
+vm_and_r_i -> VM_AND_R_I ;
+vm_and_r_r -> VM_AND_R_R ;
+vm_jmp -> VM_JMP;
+vm_je_r_i -> VM_JE_R_I;
+vm_je_r_r -> VM_JE_R_R;
+vm_jlt_r_i -> VM_JLT_R_I;
+vm_jlt_r_r -> VM_JLT_R_R;
+vm_load_r_r -> VM_LOAD_R_R;
+vm_load_r_i -> VM_LOAD_R_I;
+vm_ltgt -> VM_LTGT;
+vm_not_r -> VM_NOT_R;
+vm_neg_r -> VM_NEG_R;
+vm_shl_r_i -> VM_SHL_R_I;
+vm_shr_r_i -> VM_SHR_R_I;
+vm_sar_r_i -> VM_SAR_R_I;
+vm_store_r_r -> VM_STORE_R_R;
+vm_xor_r_i -> VM_XOR_R_I;
+vm_xor_r_r -> VM_XOR_R_R;
+vm_call -> VM_CALL;
+vm_ret -> VM_RET;
+vm_push_r -> VM_PUSH_R;
+vm_push_ret -> VM_PUSH_RET;
+vm_pop_r -> VM_POP_R;
+vm_lea_r_m -> VM_LEA_R_M;
+vm_v_arit -> VM_V_ARIT;
+
+vm_load_mem -> vm_xor_r_r,vm_add_r_i,vm_load_r_r{
+        if (!is_mem_reg($$.reg1)){
+                revert;
+        }
+        $1.reg1 = get_mem_reg($$.reg1);
+        $1.reg2 = get_mem_reg($$.reg1);
+        $2.reg1 = get_mem_reg($$.reg1);
+        $2.imm = get_offset($$.reg1);
+        $3.reg1 = get_mem_reg($$.reg1);
+        $3.reg2 = $1.reg1;
+};
+
+vm_store_mem -> vm_xor_r_r,vm_add_r_i,vm_store_r_r{
+        if (!is_mem_reg($$.reg1)){
+                revert;
+        }
+        $1.reg1 = vreg_values[16];
+        $1.reg2 = vreg_values[16];
+        $2.reg1 = vreg_values[16];
+        $2.imm = get_offset($$.reg1);
+        $3.reg2 = vreg_values[16];
+        $3.reg1 = get_mem_reg($$.reg1);
+};
+
+vm_mov -> vm_xor_r_r,vm_add_r_r{
+        if ($$.reg1 == $$.reg2){
+                revert;
+        }
+        $1.reg1 = $$.reg1;
+        $1.reg2 = $$.reg1;
+        $2.reg1 = $$.reg1;
+        $2.reg2 = $$.reg2;
+} | nop{
+        if ($$.reg1 != $$.reg2){
+                revert;
+        }
+};
+
+vm_prologue -> vm_load_mem,vm_load_mem{
+
+        $1.reg1 = $$.reg1;
+        $2.reg1 = $$.reg2;
+
+};
+
+vm_epilogue -> vm_store_mem,vm_store_mem{
+
+        $1.reg1 = $$.reg1;
+        $2.reg1 = $$.reg2;
+
+};
+
+
+%%
+//Empty translation section

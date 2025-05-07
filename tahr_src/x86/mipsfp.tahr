@@ -1,0 +1,74 @@
+%%
+%token SDC1,LDC1,SUBD,CVTDW,CVTDL,MTC1,MFC1,MFHC1,DIVD,MULD,CMPCONFMT,BC1EQZ,BC1NEZ,DMFC1,LDC1_M,TRUNC_W_D,ADDD,DMTC1,MOVD,ABSD;
+%attribute fpreg,char*,"$f0","$f1","$f2","$f3","$f4","$f5","$f6","$f7","$f8","$f9","$f10","$f11","$f12","$f13","$f14","$f15","$f16","$f17","$f18","$f19","$f20","$f21","$f22","$f23","$f24","$f25","$f26","$f27","$f28","$f29","$f30","$f31";
+%attribute condn,char*,"af.","un.","eq.","ueq.","lt.","ult.","le.","ule.","at.","une.","ne.","uge.","oge.","ugt.","ogt.";
+%attribute fmtsuf,char*,"d","s","w";
+//store from fp
+%symbol sdc1_r_m,fpreg,src,reg,base,num,offset;
+//load into fp
+%symbol ldc1_r_m,fpreg,dest,reg,base,num,offset;
+%symbol ldc1_r_m_d,fpreg,dest,reg,base,directive,dir,label,offset;
+%symbol subd_r_r,fpreg,reg1,fpreg,reg2,fpreg,dest;
+//Convert 32 bit word to double precision
+%symbol cvtdw,fpreg,dest,fpreg,src;
+%symbol cvtdl,fpreg,dest,fpreg,src;
+%symbol add_d,fpreg,dest,fpreg,reg1,fpreg,reg2;
+%symbol trunc_w_d,fpreg,dest,fpreg,src;
+%symbol mov_d,fpreg,dest,fpreg,src;
+%symbol mtc1,reg,src,fpreg,dest;
+%symbol mfc1,reg,dest,fpreg,src;
+%symbol mfhc1,reg,dest,fpreg,src;
+%symbol dmfc1,reg,dest,fpreg,src;
+%symbol dmtc1,fpreg,dest,reg,src;
+%symbol divd,fpreg,dest,fpreg,reg1,fpreg,reg2;
+%symbol muld,fpreg,dest,fpreg,reg1,fpreg,reg2;
+%symbol cmpconfmt,fpreg,dest,fpreg,reg1,fpreg,reg2,fmtsuf,fmt,condn,con;
+%symbol bc1eqz,fpreg,reg1,label,target;
+%symbol bc1nez,fpreg,reg1,label,target;
+%symbol absd,fpreg,dest,fpreg,src;
+
+%%
+ADDD: "add.d" " " dest "," reg1 "," reg2 ;
+CVTDL: "cvt.d.l" " " dest "," src ;
+LDC1_M: "ldc1" " " dest "," dir "(" offset ")" "(" base ")" ;
+SDC1: "sdc1" " " src "," offset "(" base ")" ;
+LDC1: "ldc1" " " dest "," offset "(" base ")" ;
+SUBD: "sub.d" " " dest "," reg1 "," reg2 ;
+MOVD: "mov.d" " " dest "," src ;
+TRUNC_W_D: "trunc.w.d" " " dest "," src ;
+CVTDW: "cvt.d.w" " " dest "," src ;
+MTC1: "mtc1" " " src "," dest ;
+MFC1: "mfc1" " " dest "," src ;
+MFHC1: "mfhc1" " " dest "," src ;
+DIVD: "div.d" " " dest "," reg1 "," reg2 ;
+MULD: "mul.d" " " dest "," reg1 "," reg2 ;
+CMPCONFMT: "cmp." con fmt " " dest "," reg1 "," reg2 ;
+BC1EQZ: "bc1eqz" " " reg1 "," target ;
+BC1NEZ: "bc1nez" " " reg1 "," target ;
+ABSD: "abs.d" " " dest "," src ;
+DMFC1: "dmfc1" " " dest "," src ;
+DMTC1: "dmtc1" " " src "," dest ;
+
+%%
+absd -> ABSD;
+mov_d -> MOVD;
+add_d -> ADDD;
+cvtdl -> CVTDL;
+trunc_w_d -> TRUNC_W_D;
+ldc1_r_m_d -> LDC1_M;
+sdc1_r_m -> SDC1;
+ldc1_r_m -> LDC1;
+subd_r_r -> SUBD;
+cvtdw -> CVTDW;
+mtc1 -> MTC1;
+mfc1 -> MFC1;
+mfhc1 -> MFHC1;
+dmfc1 -> DMFC1;
+divd -> DIVD;
+muld -> MULD;
+cmpconfmt -> CMPCONFMT;
+bc1eqz -> BC1EQZ;
+bc1nez -> BC1NEZ;
+dmtc1 -> DMTC1;
+%%
+

@@ -1,0 +1,103 @@
+.text
+fibonacci_ricorsivo:
+ xor_r_r r5 , r5 
+ add_r_r r5 , r3 
+ add_r_i r5 , 5 
+ nop 
+ xor_r_r temp , temp 
+ add_r_i temp , 32 
+ neg_r temp 
+ add_r_r sp , temp 
+ xor_r_r temp , temp 
+ add_r_r temp , sp 
+ add_r_i temp , 28 
+ xor_r_r rsize , rsize 
+ add_r_i rsize , 32 
+ store_r_r ret , temp 
+ xor_r_r temp , temp 
+ add_r_r temp , sp 
+ add_r_i temp , 24 
+ xor_r_r rsize , rsize 
+ add_r_i rsize , 32 
+ store_r_r r1 , temp 
+ xor_r_r temp , temp 
+ add_r_r temp , sp 
+ add_r_i temp , 20 
+ xor_r_r rsize , rsize 
+ add_r_i rsize , 32 
+ store_r_r r2 , temp 
+ xor_r_r r2 , r2 
+ add_r_r r2 , r3 
+ xor_r_r r1 , r1 
+ add_r_r r1 , r5 
+ add_r_i r1 , 0 
+ $BB0_1: 
+ xor_r_r r4 , r4 
+ add_r_r r4 , r2 
+ shl_r_i r4 , 16 
+ sar_r_i r4 , 16 
+ ltgt vmorph_art_lab_0 
+ jlt_r_i r4 , 2 
+ xor_r_r r4 , r4 
+ add_r_i r4 , 0 
+ ltgt vmorph_art_lab_1 
+ jmp 
+ vmorph_art_lab_0: 
+ xor_r_r r4 , r4 
+ add_r_i r4 , 1 
+ vmorph_art_lab_1:
+ ltgt $BB0_3 
+ jlt_r_r r4 , r5 
+ jlt_r_r r5 , r4 
+ xor_r_r r4 , r4 
+ add_r_r r4 , r2 
+ xor_r_r temp , temp 
+ add_r_i temp , 1 
+ neg_r temp 
+ add_r_r r4 , temp 
+ ltgt fibonacci_ricorsivo 
+ jal 
+ xor_r_r r3 , r3 
+ add_r_r r3 , r4 
+ shl_r_i r3 , 16 
+ sar_r_i r3 , 16 
+ nop 
+ add_r_r r1 , r9 
+ ltgt $BB0_1 
+ jmp 
+ nop 
+ xor_r_r temp , temp 
+ add_r_i temp , 2 
+ neg_r temp 
+ add_r_r r2 , temp 
+ $BB0_3: 
+ xor_r_r r4 , r4 
+ add_r_r r4 , r1 
+ add_r_r r4 , r2 
+ xor_r_r r9 , r9 
+ add_r_r r9 , r4 
+ shl_r_i r9 , 16 
+ sar_r_i r9 , 16 
+ xor_r_r temp , temp 
+ add_r_r temp , sp 
+ add_r_i temp , 20 
+ xor_r_r rsize , rsize 
+ add_r_i rsize , 32 
+ load_r_r r2 , temp 
+ xor_r_r temp , temp 
+ add_r_r temp , sp 
+ add_r_i temp , 24 
+ xor_r_r rsize , rsize 
+ add_r_i rsize , 32 
+ load_r_r r1 , temp 
+ xor_r_r temp , temp 
+ add_r_r temp , sp 
+ add_r_i temp , 28 
+ xor_r_r rsize , rsize 
+ add_r_i rsize , 32 
+ load_r_r ret , temp 
+ xor_r_r tgt , tgt 
+ add_r_r tgt , ret 
+ jmp 
+ nop 
+ add_r_i sp , 32

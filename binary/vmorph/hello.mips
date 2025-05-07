@@ -1,0 +1,11 @@
+.data
+str: .asciiz "Hello World"
+
+.text
+
+main:
+        addi $v0,$zero,1
+        addi $a0,$zero,1
+        la $a1,str
+        addi $a2,$zero,11
+        syscall

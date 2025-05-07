@@ -1,0 +1,44 @@
+.data
+str: .ascii "res: %d\n"
+.text
+.global main
+fibonacci_ricorsivo:
+        daddiu   $sp, $sp, -36
+        sd      $ra, 32($sp)
+        sw      $s1, 20($sp)
+        lw      $s0, 20($sp)
+        slti    $s0, $s0, 2             
+        beqc    $s0, $zero, BB0_3
+        bc       BB0_2
+BB0_2:
+        lw      $s0, 20($sp)
+        sw      $s0, 24($sp)
+        bc       BB0_4
+BB0_3:
+        lw      $s0, 20($sp)
+        addiu   $s1, $s0, -1
+        jal     fibonacci_ricorsivo
+        sw      $v0, 16($sp)
+        lw      $s0, 20($sp)
+        addiu   $s1, $s0, -2
+        balc     fibonacci_ricorsivo
+        move    $s0, $v0
+        lw      $v0, 16($sp)
+        addu    $s0, $v0, $s0
+        sw      $s0, 24($sp)
+        bc       BB0_4
+BB0_4:
+        lw      $v0, 24($sp)
+        ld      $ra, 32($sp)
+        daddiu   $sp, $sp, 36
+        jr      $ra
+main:
+        daddiu   $sp, $sp, -28
+        sd      $ra, 24($sp)
+        sw      $zero, 16($sp)
+        addiu   $s1, $zero, 7
+        jal     fibonacci_ricorsivo
+        ld      $ra, 24($sp) 
+        daddiu  $sp, $sp, 28       
+        jr $ra
+

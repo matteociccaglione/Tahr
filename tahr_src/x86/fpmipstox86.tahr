@@ -1,0 +1,540 @@
+%%
+
+%symbol sdc1_r_m_t,ifpreg,src,ireg,base,num,offset;
+%symbol ldc1_r_m_t,ifpreg,dest,ireg,base,num,offset;
+%symbol subd_r_r_t,ifpreg,reg1,ifpreg,reg2,ifpreg,dest;
+%symbol cvtdw_t,ifpreg,dest,ifpreg,src;
+%symbol mtc1_t,ireg,src,ifpreg,dest;
+%symbol mfc1_t,ireg,dest,ifpreg,src;
+%symbol mfhc1_t,ireg,dest,ifpreg,src;
+%symbol dmfc1_t,ireg,dest,ifpreg,src;
+%symbol divd_t,ifpreg,dest,ifpreg,reg1,ifpreg,reg2;
+%symbol muld_t,ifpreg,dest,ifpreg,reg1,ifpreg,reg2;
+%symbol cmpconfmt_t,ifpreg,dest,ifpreg,reg1,ifpreg,reg2,fmtsuf,fmt,condn,con;
+%symbol cmp_jmp,ifpreg,reg1,ifpreg,reg2,fmtsuf,fmt,condn,con,label,target;
+%symbol cmp_neg,ifpreg,reg1,ifpreg,reg2,fmtsuf,fmt,condn,con,label,target;
+%symbol lea_label_f,ifpreg,dest,label,lab,suf,suffix,ireg,base;
+%symbol truncwd_t,fpreg,dest,fpreg,src;
+%symbol cvtdl_t,fpreg,dest,fpreg,src;
+%symbol add_d_t,fpreg,reg1,fpreg,reg2,fpreg,dest;
+%symbol dmtc1_t,fpreg,dest,reg,src;
+%symbol absd_t,ifpreg,dest,ifpreg,src;
+%%
+
+%%
+
+
+absd_t -> imovapd_r_r,andpd_m{
+        $1.src = $$.src;
+        $1.dest = $$.dest;
+        $2.dest = $$.dest;
+        $2.mask = 0x7FFFFFFFFFFFFFFF;
+};
+
+dmtc1_t -> i_mov_r_r{
+        $1.reg1 = $$.src;
+        $1.dest = $$.dest;
+        $1.suffix = suf_values[0];
+};
+lea_label_f -> i_push_r,i_lea_m_r,i_mov_r_r,i_pop_r{
+        $1.reg1 = ireg_values[0];
+        $1.suffix = $$.suffix;
+        $2.base = $$.base;
+        $2.dest = $1.reg1;
+        $2.suffix = $$.suffix;
+        $2.offset = $$.lab;
+        $3.reg1 = $1.reg1;
+        $3.dest = $$.dest;
+        $3.suffix = $$.suffix;
+        $4.reg1 = $1.reg1;
+        $4.suffix = $$.suffix;
+};
+
+truncwd_t -> i_push_r,icvttsd2si_r_r,imovd_f_r,i_pop_r{
+        $1.reg1 = ireg_values[0];
+        $1.suffix = suf_values[0];
+        $2.reg1 = $$.src;
+        $2.dest = $1.reg1;
+        $3.src = $2.dest;
+        $3.dest = $$.dest;
+        $4.reg1 = $1.reg1;
+        $4.suffix = suf_values[0];
+};
+
+cvtdl_t -> i_push_r,imovd_r_f,icvtsi2sd_r_r,i_pop_r{
+        $1.reg1 = ireg_values[0];
+        $1.suffix = suf_values[0];
+        $2.src = $$.src;
+        $2.dest = $1.reg1;
+        $3.reg1 = $1.reg1;
+        $3.dest = $$.dest;
+        $4.reg1 = $1.reg1;
+        $4.suffix = suf_values[0];
+        
+};
+
+
+cvtdw_t -> i_push_r,imovd_r_f,icvtsi2sd_r_r,i_pop_r{
+        $1.reg1 = ireg_values[0];
+        $1.suffix = suf_values[0];
+        $2.src = $$.src;
+        $2.dest = $1.reg1;
+        $3.reg1 = $1.reg1;
+        $3.dest = $$.dest;
+        $4.reg1 = $1.reg1;
+        $4.suffix = suf_values[0];
+        
+};
+
+mtc1_t -> imovd_f_r {
+        $1.dest = $$.dest;
+        $1.src = $$.src;
+};
+
+mfc1_t -> imovd_r_f {
+        $1.src = $$.src;
+        $1.dest = $$.dest;
+};
+dmfc1_t -> i_mov_r_r {
+        $1.suffix = suf_values[0];
+        $1.reg1 = $$.src;
+        $1.dest = $$.dest;
+};
+
+divd_t -> i_mov_r_r,idivsd_r_r {
+        if ($$.reg1 == $$.dest || $$.reg2 == $$.dest){
+                revert;
+        }
+        $1.suffix = suf_values[0];
+        $1.reg1 = $$.reg2;
+        $1.dest = $$.dest;
+        $2.reg1 = $$.reg1;
+        $2.dest = $$.dest;
+} | imovapd_r_r,idivsd_r_r,imovapd_r_r{
+
+        if ($$.dest != $$.reg2 || $$.dest == $$.reg1){
+                revert;
+        }
+        $1.src = $$.reg1;
+        $1.dest = ifpreg_values[15];
+        $2.reg1 = $$.dest;
+        $2.dest = $1.dest;
+        $3.src = $2.dest;
+        $3.dest = $$.dest;
+} | idivsd_r_r{
+        if ($$.dest != $$.reg1){
+                revert;
+        }
+        $1.dest = $$.dest;
+        $1.reg1 = $$.reg2;
+};
+muld_t -> i_mov_r_r,imulsd_r_r {
+        $1.suffix = suf_values[0];
+        $1.reg1 = $$.reg2;
+        $1.dest = $$.dest;
+        $2.reg1 = $$.reg1;
+        $2.dest = $$.dest;
+};
+
+subd_r_r_t -> imovapd_r_r,isubsd_r_r{
+        if ($$.reg1 == $$.dest || $$.reg2 == $$.dest){
+                printf("Skipping case dest != reg1 and reg2\n");
+                revert;
+        }
+        $1.src = $$.reg2;
+        $1.dest = $$.dest;
+        $2.reg1 = $$.reg1;
+        $2.dest = $$.dest;
+
+} | isubsd_r_r {
+        if (!($$.reg2 == $$.dest)){
+                printf("Skipping case dest == reg2\n");
+                revert;
+        }
+        $1.reg1 = $$.reg1;
+        $1.dest = $$.dest;
+} | imovapd_r_r,isubsd_r_r,imovapd_r_r{
+        
+        if(!($$.dest == $$.reg1 && $$.dest != $$.reg2)){
+                printf("Skipping case dest != reg2 but == reg1\n");
+                revert;
+        }
+        $1.src = $$.reg2;
+        $1.dest = ifpreg_values[15];
+        $2.reg1 = $$.reg1;
+        $2.dest = $1.dest;
+        $3.src = $1.dest;
+        $3.dest = $$.dest;
+};
+
+add_d_t -> imovapd_r_r,iaddsd_r_r{
+        
+        if ($$.reg1 == $$.dest || $$.reg2 == $$.dest){
+
+                revert;
+        }
+
+        $1.src = $$.reg1;
+        $1.dest = $$.dest;
+        $2.reg1 = $$.reg2;
+        $2.dest = $$.dest;
+
+} | iaddsd_r_r {
+        if ($$.reg1 != $$.dest && $$.reg2 != $$.dest){
+                revert;
+        }
+        if ($$.reg1 == $$.dest){
+                $1.dest = $$.dest;
+                $1.reg1 = $$.reg2;
+        }
+        
+        if ($$.reg2 == $$.dest){
+                $1.dest = $$.reg2;
+                $1.reg1 = $$.reg1;
+        }
+
+};
+
+cmp_jmp -> iucomisd_r_r,i_jnp{
+        if ( is_unordered($$.con) || (get_float_size($$.fmt) != 'd') || (get_condition($$.con) != '?') ){
+                revert;
+        }
+        $1.reg2 = $$.reg1;
+        $1.reg1 = $$.reg2;
+        $2.text = $$.target;
+
+} | iucomiss_r_r,i_jnp{
+        
+        if ( is_unordered($$.con) || (get_float_size($$.fmt) != 's') || (get_condition($$.con) != '?') ){
+                revert;
+        }
+        $1.reg2 = $$.reg1;
+        $1.reg1 = $$.reg2;
+        $2.text = $$.target;
+
+} | iucomiss_r_r,i_jb,i_jp{
+        if ( !is_unordered($$.con) || (get_float_size($$.fmt) != 's') || (get_condition($$.con) != 'b') ){
+                revert;
+        }
+        $1.reg2 = $$.reg1;
+        $1.reg1 = $$.reg2;
+        $2.text = $$.target;
+        $3.text = $$.target;
+} | iucomiss_r_r,i_jz,i_jp{
+        if ( !is_unordered($$.con) || (get_float_size($$.fmt) != 's') || (get_condition($$.con) != 'e') ){
+                revert;
+        }
+        $1.reg2 = $$.reg1;
+        $1.reg1 = $$.reg2;
+        $2.text = $$.target;
+        $3.text = $$.target;
+} | iucomiss_r_r,i_jnz,i_jp{
+        if ( !is_unordered($$.con) || (get_float_size($$.fmt) != 's') || (get_condition($$.con) != 'n') ){
+                revert;
+        }
+        $1.reg2 = $$.reg1;
+        $1.reg1 = $$.reg2;
+        $2.text = $$.target;
+        $3.text = $$.target;
+} | iucomiss_r_r,i_ja,i_jp{
+        if ( !is_unordered($$.con) || (get_float_size($$.fmt) != 's') || (get_condition($$.con) != 'a') ){
+                revert;
+        }
+        $1.reg2 = $$.reg1;
+        $1.reg1 = $$.reg2;
+        $2.text = $$.target;
+        $3.text = $$.target;
+} | iucomiss_r_r,i_jbe,i_jp{
+        if ( !is_unordered($$.con) || (get_float_size($$.fmt) != 's') || (get_condition($$.con) != 'l') ){
+                revert;
+        }
+        $1.reg2 = $$.reg1;
+        $1.reg1 = $$.reg2;
+        $2.text = $$.target;
+        $3.text = $$.target;
+} | iucomiss_r_r,i_jae,i_jp{
+        if ( !is_unordered($$.con) || (get_float_size($$.fmt) != 's') || (get_condition($$.con) != 'g') ){
+                revert;
+        }
+        $1.reg2 = $$.reg1;
+        $1.reg1 = $$.reg2;
+        $2.text = $$.target;
+        $3.text = $$.target;
+} | iucomiss_r_r,i_jp{
+
+        if ( !is_unordered($$.con) || (get_float_size($$.fmt) != 's') || (get_condition($$.con) != '?') ){
+                revert;
+        }
+        $1.reg2 = $$.reg1;
+        $1.reg1 = $$.reg2;
+        $2.text = $$.target;
+}| icomiss_r_r,i_jb{
+        if ( is_unordered($$.con) || (get_float_size($$.fmt) != 's') || (get_condition($$.con) != 'b') ){
+                revert;
+        }
+        $1.reg2 = $$.reg1;
+        $1.reg1 = $$.reg2;
+        $2.text = $$.target;
+} | icomiss_r_r,i_jz{
+        if ( is_unordered($$.con) || (get_float_size($$.fmt) != 's') || (get_condition($$.con) != 'e') ){
+                revert;
+        }
+        $1.reg2 = $$.reg1;
+        $1.reg1 = $$.reg2;
+        $2.text = $$.target;
+} | icomiss_r_r,i_jnz{
+        if ( is_unordered($$.con) || (get_float_size($$.fmt) != 's') || (get_condition($$.con) != 'n') ){
+                revert;
+        }
+        $1.reg2 = $$.reg1;
+        $1.reg1 = $$.reg2;
+        $2.text = $$.target;
+} | icomiss_r_r,i_ja{
+        if ( is_unordered($$.con) || (get_float_size($$.fmt) != 's') || (get_condition($$.con) != 'a') ){
+                revert;
+        }
+        $1.reg2 = $$.reg1;
+        $1.reg1 = $$.reg2;
+        $2.text = $$.target;
+} | icomiss_r_r,i_jbe{
+        if ( is_unordered($$.con) || (get_float_size($$.fmt) != 's') || (get_condition($$.con) != 'l') ){
+                revert;
+        }
+        $1.reg2 = $$.reg1;
+        $1.reg1 = $$.reg2;
+        $2.text = $$.target;
+} | icomiss_r_r,i_jae{
+        if ( is_unordered($$.con) || (get_float_size($$.fmt) != 's') || (get_condition($$.con) != 'g') ){
+                revert;
+        }
+        $1.reg2 = $$.reg1;
+        $1.reg1 = $$.reg2;
+        $2.text = $$.target;
+} | icomisd_r_r,i_jb{
+        if ( is_unordered($$.con) || (get_float_size($$.fmt) != 'd') || (get_condition($$.con) != 'b') ){
+                revert;
+        }
+        $1.reg2 = $$.reg1;
+        $1.reg1 = $$.reg2;
+        $2.text = $$.target;
+} | icomisd_r_r,i_jz{
+        if ( is_unordered($$.con) || (get_float_size($$.fmt) != 'd') || (get_condition($$.con) != 'e') ){
+                revert;
+        }
+        $1.reg2 = $$.reg1;
+        $1.reg1 = $$.reg2;
+        $2.text = $$.target;
+} | icomisd_r_r,i_jnz{
+        printf("Calling this fucking function\n");
+        if ( is_unordered($$.con) || (get_float_size($$.fmt) != 'd') || (get_condition($$.con) != 'n') ){
+                printf("Not this time\n");
+                revert;
+        }
+        $1.reg2 = $$.reg1;
+        $1.reg1 = $$.reg2;
+        $2.text = $$.target;
+} | icomisd_r_r,i_ja{
+        if ( is_unordered($$.con) || (get_float_size($$.fmt) != 'd') || (get_condition($$.con) != 'a') ){
+                revert;
+        }
+        $1.reg2 = $$.reg1;
+        $1.reg1 = $$.reg2;
+        $2.text = $$.target;
+} | icomisd_r_r,i_jbe{
+        if ( is_unordered($$.con) || (get_float_size($$.fmt) != 'd') || (get_condition($$.con) != 'l') ){
+                revert;
+        }
+        $1.reg2 = $$.reg1;
+        $1.reg1 = $$.reg2;
+        $2.text = $$.target;
+} | icomisd_r_r,i_jae{
+        if ( is_unordered($$.con) || (get_float_size($$.fmt) != 'd') || (get_condition($$.con) != 'g') ){
+                revert;
+        }
+        $1.reg2 = $$.reg1;
+        $1.reg1 = $$.reg2;
+        $2.text = $$.target;
+} | iucomisd_r_r,i_jb,i_jp{
+        if ( !is_unordered($$.con) || (get_float_size($$.fmt) != 'd') || (get_condition($$.con) != 'b') ){
+                revert;
+        }
+        $1.reg2 = $$.reg1;
+        $1.reg1 = $$.reg2;
+        $2.text = $$.target;
+        $3.text = $$.target;
+} | iucomisd_r_r,i_jz,i_jp{
+        if ( !is_unordered($$.con) || (get_float_size($$.fmt) != 'd') || (get_condition($$.con) != 'e') ){
+                revert;
+        }
+        $1.reg2 = $$.reg1;
+        $1.reg1 = $$.reg2;
+        $2.text = $$.target;
+        $3.text = $$.target;
+} | iucomisd_r_r,i_jnz,i_jp{
+        if ( !is_unordered($$.con) || (get_float_size($$.fmt) != 'd') || (get_condition($$.con) != 'n') ){
+                revert;
+        }
+        $1.reg2 = $$.reg1;
+        $1.reg1 = $$.reg2;
+        $2.text = $$.target;
+        $3.text = $$.target;
+} | iucomisd_r_r,i_ja,i_jp{
+        if ( !is_unordered($$.con) || (get_float_size($$.fmt) != 'd') || (get_condition($$.con) != 'a') ){
+                revert;
+        }
+        $1.reg2 = $$.reg1;
+        $1.reg1 = $$.reg2;
+        $2.text = $$.target;
+        $3.text = $$.target;
+} | iucomisd_r_r,i_jbe,i_jp{
+        if ( !is_unordered($$.con) || (get_float_size($$.fmt) != 'd') || (get_condition($$.con) != 'l') ){
+                revert;
+        }
+        $1.reg2 = $$.reg1;
+        $1.reg1 = $$.reg2;
+        $2.text = $$.target;
+        $3.text = $$.target;
+} | iucomisd_r_r,i_jae,i_jp{
+        if ( !is_unordered($$.con) || (get_float_size($$.fmt) != 'd') || (get_condition($$.con) != 'g') ){
+                revert;
+        }
+        $1.reg2 = $$.reg1;
+        $1.reg1 = $$.reg2;
+        $2.text = $$.target;
+        $3.text = $$.target;
+} | iucomisd_r_r,i_jp{
+
+        if ( !is_unordered($$.con) || (get_float_size($$.fmt) != 'd') || (get_condition($$.con) != '?') ){
+                revert;
+        }
+        $1.reg2 = $$.reg1;
+        $1.reg1 = $$.reg2;
+        $2.text = $$.target;
+};
+%%
+sdc1_r_m <-> imovsd_r_m {
+        $1.src = fp_map_register($$.src);
+        $1.offset = $$.offset;
+        $1.base = map_register($$.base,64);
+};
+
+cmp_jmp <- cmpconfmt,bc1eqz {
+        $$.reg1 = fp_map_register($1.reg1);
+        $$.reg2 = fp_map_register($1.reg2);
+        $$.con = $1.con;
+        $$.fmt = $1.fmt;
+        $$.target = $2.target;
+};
+
+cmp_neg <- cmpconfmt,bc1nez {
+        printf("Con is %s and fmt is %s\n",$1.con,$1.fmt);
+        $$.reg1 = fp_map_register($1.reg1);
+        $$.reg2 = fp_map_register($1.reg2);
+        $$.con = $1.con;
+        $$.fmt = $1.fmt;
+        $$.target = $2.target;
+};
+
+
+imovsd_lab_r <- lui_r_m,daddiu_r_m,dsll,daddiu_r_m,dsll,ldc1_r_m_d{
+        if (!(strcmp($1.lab,$2.lab) == 0  && strcmp($4.lab,$6.offset) == 0)){
+                revert;
+        }
+        $$.dest = fp_map_register($6.dest);
+        $$.offset = $1.lab;
+        $$.base = empty_string();
+};
+cmp_neg <-> cmp_jmp {
+        $1.reg1 = $$.reg1;
+        $1.reg2 = $$.reg2;
+        $1.con = negate($$.con);
+        $1.fmt = $$.fmt;
+        $1.target = $$.target;
+};
+
+ldc1_r_m <-> imovsd_m_r {
+        $1.dest = fp_map_register($$.dest);
+        $1.offset = $$.offset;
+        $1.base = map_register($$.base,64);
+};
+subd_r_r <-> subd_r_r_t {
+        $1.dest = fp_map_register($$.dest);
+        $1.reg1 = fp_map_register($$.reg1);
+        $1.reg2 = fp_map_register($$.reg2);
+};
+add_d <-> add_d_t{
+
+        $1.dest = fp_map_register($$.dest);
+        $1.reg1 = fp_map_register($$.reg1);
+        $1.reg2 = fp_map_register($$.reg2);
+        
+
+};
+
+cvtdw <-> cvtdw_t {
+        $1.dest = fp_map_register($$.dest);
+        $1.src = fp_map_register($$.src);
+        
+};
+
+mtc1 <-> mtc1_t {
+        
+        $1.dest = fp_map_register($$.dest);
+        $1.src = map_register($$.src,64);
+};
+mfc1 <-> mfc1_t {
+        
+        $1.dest = map_register($$.dest,64);
+        $1.src = fp_map_register($$.src);
+};
+mfhc1 <-> mfhc1_t {
+        
+        $1.dest = map_register($$.dest,64);
+        $1.src = fp_map_register($$.src);
+};
+dmfc1 <-> dmfc1_t {
+
+        $1.dest = map_register($$.dest,64);
+        $1.src = fp_map_register($$.src);
+};
+
+divd <-> divd_t {
+        $1.dest = fp_map_register($$.dest);
+        $1.reg1 = fp_map_register($$.reg1);
+        $1.reg2 = fp_map_register($$.reg2);
+};
+muld <-> muld_t {
+        $1.dest = fp_map_register($$.dest);
+        $1.reg1 = fp_map_register($$.reg1);
+        $1.reg2 = fp_map_register($$.reg2);
+};
+cmpconfmt <-> cmpconfmt_t {
+        $1.dest = fp_map_register($$.dest);
+        $1.reg1 = fp_map_register($$.reg1);
+        $1.reg2 = fp_map_register($$.reg2);
+        $1.fmt = $$.fmt;
+        $1.con = $$.con;
+};
+trunc_w_d <-> truncwd_t {
+        $1.src = fp_map_register($$.src);
+        $1.dest = fp_map_register($$.dest);
+};
+cvtdl <-> cvtdl_t {
+        $1.src = fp_map_register($$.src);
+        $1.dest = fp_map_register($$.dest);
+};
+dmtc1 <-> dmtc1_t {
+       $1.dest = fp_map_register($$.dest);
+       $1.src = map_register($$.src,64);
+};
+
+mov_d <-> imovsd_r_r {
+        $1.dest = fp_map_register($$.dest);
+        $1.src = fp_map_register($$.src);
+};
+
+absd <-> absd_t {
+        
+        $1.dest = fp_map_register($$.dest);
+        $1.src = fp_map_register($$.src);
+};

@@ -1,0 +1,7 @@
+%meta REG,NUM;
+%proto rax,rbx;
+%hyper push,pop;
+
+%%
+push REG -> add REG1,push REG2 | push REG2;
+%%

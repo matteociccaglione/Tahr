@@ -1,0 +1,1490 @@
+%%
+// Translation
+%symbol muh_r_r_t,reg,reg1,reg,reg2,reg,dest,suf,suffix;
+%symbol seh_t,reg,reg1,reg,dest,suf,suffix;
+%symbol move_t,reg,reg1,reg,dest,suf,suffix;
+%symbol add_r_r_t,reg,reg1,reg,reg2,reg,dest,suf,suffix;
+%symbol sub_r_r_t,reg,reg1,reg,reg2,reg,dest,suf,suffix; 
+%symbol add_r_i_t,reg,reg1,num,imm,reg,dest,suf,suffix;
+%symbol mul_r_r_t,reg,reg1,reg,reg2,reg,dest,suf,suffix;  
+%symbol div_r_r_t,reg,reg1,reg,reg2,reg,dest,suf,suffix; 
+%symbol load_dw_t,reg,dest,num,offset,reg,base,suf,suffix;
+%symbol load_w_t,reg,dest,num,offset,reg,base,suf,suffix;
+%symbol load_h_t,reg,dest,num,offset,reg,base,suf,suffix;
+%symbol load_b_t,reg,dest,num,offset,reg,base,suf,suffix;
+%symbol store_d_t,reg,source,num,offset,reg,base,suf,suffix;
+%symbol store_w_t,reg,source,num,offset,reg,base,suf,suffix;
+%symbol store_h_t,reg,source,num,offset,reg,base,suf,suffix;
+%symbol store_b_t,reg,source,num,offset,reg,base,suf,suffix;
+%symbol move_h_t,reg,dest,suf,suffix; 
+%symbol move_l_t,reg,dest,suf,suffix; 
+%symbol and_r_r_t,reg,reg1,reg,reg2,reg,dest,suf,suffix;
+%symbol and_r_i_t,reg,reg1,num,imm,reg,dest,suf,suffix;
+%symbol or_r_r_t,reg,reg1,reg,reg2,reg,dest,suf,suffix;
+%symbol or_r_i_t,reg,reg1,num,imm,reg,dest,suf,suffix;
+%symbol xor_r_r_t,reg,reg1,reg,reg2,reg,dest,suf,suffix;
+%symbol nor_r_r_t,reg,reg1,reg,reg2,reg,dest,suf,suffix;
+%symbol set_l_r_r_t,reg,reg1,reg,reg2,reg,dest,suf,suffix;  
+%symbol set_l_r_i_t,reg,reg1,num,imm,reg,dest,suf,suffix; 
+%symbol shift_l_t,reg,reg1,num,imm,reg,dest,suf,suffix;
+%symbol shift_r_t,reg,reg1,num,imm,reg,dest,suf,suffix;
+%symbol branch_eq_r_r_t,reg,reg1,label,address,reg,reg2,suf,suffix;
+%symbol branch_neq_r_r_t,reg,reg1,label,address,reg,reg2,suf,suffix;
+%symbol jump_t,label,address,suf,suffix;
+%symbol jump_r_t,reg,reg1,suf,suffix;
+%symbol call_t,label,address,suf,suffix;
+%symbol i_preserve,reg,reg1,suf,suffix;
+%symbol i_restore,reg,reg1,suf,suffix;
+%symbol i_prologue,reg,reg1,reg,reg2,reg,old1,reg,old2,suf,suffix;
+%symbol i_load_mem,reg,reg1,reg,old1,suf,suffix;
+%symbol i_store_mem,reg,reg1,reg,old1,suf,suffix;
+%symbol i_lea_address,reg,dest,label,target;
+%symbol branch_nez_c_t,reg,reg1,label,target;
+%symbol subu_r_r_t,reg,reg1,reg,reg2,reg,dest;
+%symbol branch_gtz_c_t,reg,reg1,label,target;
+%symbol branch_ge_c_t,reg,reg1,reg,reg2,label,target;
+%symbol branch_geu_c_t,reg,reg1,reg,reg2,label,target;
+%symbol shift_ra_t,reg,reg1,reg,dest,num,imm;
+%symbol branch_lt_c_t,reg,reg1,reg,reg2,label,target;
+%symbol dsrl_t,reg,reg1,reg,dest,num,imm;
+%symbol branch_ltz_c_t,reg,reg1,label,target;
+%symbol teq_t,reg,reg1,reg,reg2;
+%symbol branch_ltu_c_t,reg,reg1,reg,reg2,label,target;
+%symbol lea_label,ireg,dest,label,lab,suf,suffix;
+%symbol load_data_label,ireg,dest,label,lab,suf,suffix,ireg,base;
+%symbol store_data_label,ireg,src,label,lab,suf,suffix,ireg,base;
+%%
+// Empty repr section
+%%
+//Gen rules
+
+i_prologue -> i_load_mem,i_load_mem{
+        $1.reg1 = $$.reg1;
+        $1.old1 = $$.old1;
+        $2.reg1 = $$.reg2;
+        $2.old1 = $$.old2;
+};
+
+i_load_mem -> i_mov_m_r{
+        if (!is_mem_reg($$.reg1)){
+                revert;
+        }
+        $1.offset = get_offset($$.old1);
+        $1.base = empty_string();
+        $1.dest = $$.reg1;
+        $1.suffix = get_suffix($1.dest);
+};
+
+i_store_mem -> i_mov_r_m{
+        if (!is_mem_reg($$.reg1)){
+                revert;
+        }
+        $1.offset = get_offset($$.old1);
+        $1.base = empty_string();
+        $1.src = $$.reg1;
+        $1.suffix = get_suffix($1.src);
+};
+lea_label -> i_lea_m_r{
+        $1.suffix = $$.suffix;
+        $1.dest = $$.dest;
+        $1.offset = $$.lab;
+        $1.base = empty_string();
+
+};
+load_data_label -> i_load_mem,i_mov_m_r_lab,i_store_mem{
+       $1.reg1 = get_mem_reg($$.dest); 
+       $1.old1 = $$.dest;
+       $2.lab = $$.lab;
+       $2.suffix = $$.suffix;
+       $2.base = $$.base; 
+       $2.dest = $1.reg1;
+       $3.reg1 = $1.reg1;
+       $3.old1 = $$.dest;
+       release_mem_regs();
+};
+store_data_label -> i_load_mem,i_mov_r_m_lab,i_store_mem{
+       $1.reg1 = get_mem_reg($$.src); 
+       $1.old1 = $$.src;
+       $2.lab = $$.lab;
+       $2.suffix = $$.suffix;
+       $2.base = $$.base; 
+       $2.src = $1.reg1;
+       $3.reg1 = $1.reg1;
+       $3.old1 = $$.src;
+       release_mem_regs();
+};
+
+i_preserve -> i_push_r,i_push_r,i_xor_r_r{
+        if (is_mul_reg($$.reg1)){
+                revert;
+        }
+        $1.reg1 = get_mul_reg($$.reg1,1);
+        $1.suffix = get_suffix($1.reg1);
+        $2.reg1 = get_mul_reg($$.reg1,2);
+        $2.suffix = get_suffix($2.reg1);
+        $3.reg1 = get_mul_reg($$.reg1,2);
+        $3.dest = $3.reg1;
+        $3.suffix = get_suffix($3.reg1);
+} | i_push_r,i_xor_r_r{
+        if (!is_mul_reg($$.reg1)){
+                revert;
+        }
+        if ($$.reg1 == get_mul_reg_size($$.reg1,1)){
+                $1.reg1 = get_mul_reg($$.reg1,2);
+        }else{
+                $1.reg1 = get_mul_reg($$.reg1,1);
+        }
+        $1.suffix = get_suffix($1.reg1);
+        $2.reg1 = get_mul_reg($$.reg1,2);
+        $2.dest = $2.reg1;
+        $2.suffix = get_suffix($2.reg1);
+};
+
+i_restore -> i_pop_r,i_pop_r{
+        if (is_mul_reg($$.reg1)){
+                revert;
+        }
+        $1.reg1 = get_mul_reg($$.reg1,1);
+        $2.reg1 = get_mul_reg($$.reg1,2);
+        $1.suffix = get_suffix($1.reg1);
+        $2.suffix = get_suffix($2.reg1);
+} | i_pop_r{
+        if (!is_mul_reg($$.reg1)){
+                revert;
+        }
+        if ($$.reg1 == get_mul_reg_size($$.reg1,1)){
+                $1.reg1 = get_mul_reg($$.reg1,2);
+        }else{
+                $1.reg1 = get_mul_reg($$.reg1,1);
+        }
+        $1.suffix = get_suffix($1.reg1);
+};
+mul_r_r_t -> i_preserve,i_prologue,i_mov_r_r,i_mul_r,i_load_mem,i_mov_r_r,i_store_mem,i_restore{
+       $3.suffix = $$.suffix;
+       $4.suffix = $$.suffix;
+       $5.suffix = $$.suffix;
+       $6.suffix = $$.suffix;
+       $1.reg1 = $$.dest; 
+       $2.reg1 = get_mem_reg($$.reg1);
+       $2.reg2 = get_mem_reg($$.reg2);
+       $2.old1 = $$.reg1;
+       $2.old2 = $$.reg2;
+       $3.dest = get_mul_reg_size($2.reg1,1);
+       $3.reg1 = $2.reg1; 
+       $4.reg1 = $2.reg2;
+       release_mem_regs();
+       $5.reg1 = get_mem_reg($$.dest);
+       $5.old1 = $$.dest;
+       $6.dest = $5.reg1;
+       $6.reg1 = $3.dest;
+       $7.reg1 = $6.dest;
+       $7.old1 = $$.dest;
+       $8.reg1 = $$.dest;
+       release_mem_regs();
+};
+
+muh_r_r_t -> i_preserve,i_prologue,i_mov_r_r,i_mul_r,i_load_mem,i_mov_r_r,i_store_mem,i_restore{
+       $3.suffix = $$.suffix;
+       $4.suffix = $$.suffix;
+       $5.suffix = $$.suffix;
+       $6.suffix = $$.suffix;
+       $8.suffix = $$.suffix;
+       $1.reg1 = $$.dest; 
+       $2.reg1 = get_mem_reg($$.reg1);
+       $2.reg2 = get_mem_reg($$.reg2);
+       $2.old1 = $$.reg1;
+       $2.old2 = $$.reg2;
+       $3.dest = get_mul_reg_size($2.reg1,1);
+       $3.reg1 = $2.reg1; 
+       $4.reg1 = $2.reg2;
+       release_mem_regs();
+       $5.reg1 = get_mem_reg($$.dest);
+       $5.old1 = $$.dest;
+       $6.dest = $5.reg1;
+       $6.reg1 = get_mul_reg_size($2.reg1,2);
+       $7.reg1 = $6.dest;
+       $7.old1 = $$.dest;
+       $8.reg1 = $$.dest;
+       release_mem_regs();
+};
+
+div_r_r_t -> i_preserve,i_prologue,i_mov_r_r,i_div_r,i_load_mem,i_mov_r_r,i_store_mem,i_restore{
+       $1.reg1 = $$.dest; 
+       $3.suffix = $$.suffix;
+       $4.suffix = $$.suffix;
+       $5.suffix = $$.suffix;
+       $6.suffix = $$.suffix;
+       $2.reg1 = get_mem_reg($$.reg1);
+       $2.reg2 = get_mem_reg($$.reg2);
+       $2.old1 = $$.reg1;
+       $2.old2 = $$.reg2;
+       $3.dest = get_mul_reg_size($2.reg1,1);
+       $3.reg1 = $2.reg1; 
+       $4.reg1 = $2.reg2;
+       release_mem_regs();
+       $5.reg1 = get_mem_reg($$.dest);
+       $5.old1 = $$.dest;
+       $6.dest = $5.reg1;
+       $6.reg1 = $3.dest;
+       $7.reg1 = $6.dest;
+       $7.old1 = $$.dest;
+       $8.reg1 = $$.dest;
+       release_mem_regs();
+};
+move_h_t -> i_load_mem,i_mov_r_r,i_store_mem{
+        $2.suffix = $$.suffix;
+        $1.reg1 = get_mem_reg($$.dest);
+        $2.reg1 = map_register(reg_values[30],32);
+        $2.dest = $1.reg1;
+        $3.reg1 = $1.reg1;
+        $3.old1 = $$.dest;
+        release_mem_regs();
+};
+move_l_t -> i_load_mem,i_mov_r_r,i_store_mem{
+        $2.suffix = $$.suffix;
+        $1.reg1 = get_mem_reg($$.dest);
+        $2.reg1 = map_register(reg_values[31],32);
+        $2.dest = $1.reg1;
+        $3.reg1 = $1.reg1;
+        $3.old1 = $$.dest;
+        release_mem_regs();
+};
+
+// add dest,op1,op2; dest can be one of op1 or op2
+
+add_r_r_t -> i_prologue,i_mov_r_r,i_load_mem,i_add_r_r,i_store_mem{
+        if ($$.dest==$$.reg1 || $$.dest==$$.reg2){
+            revert;
+        }
+        $2.suffix = $$.suffix;
+        $4.suffix = $$.suffix;
+        $1.old1 = $$.dest;
+        $1.old2 = $$.reg1;
+        $1.reg1 = get_mem_reg($$.dest);
+        $1.reg2 = get_mem_reg($$.reg1);
+        $2.dest = get_mem_reg($$.dest);
+        $2.reg1 = get_mem_reg($$.reg1);
+        release_mem_reg($$.reg1);
+        $3.reg1 = get_mem_reg($$.reg2);
+        $3.old1 = $$.reg2;
+        $4.dest = get_mem_reg($$.dest);
+        $4.reg1 = get_mem_reg($$.reg2);
+        $5.reg1 = get_mem_reg($$.dest);
+        $5.old1 = $$.dest;
+        release_mem_regs();
+} | i_prologue,i_add_r_r,i_store_mem{
+        $2.suffix = $$.suffix;
+        $1.reg1 = get_mem_reg($$.dest);
+        $1.old1 = $$.dest;
+    if ($$.dest == $$.reg2){
+        $1.reg1 = $$.dest;
+        $1.reg2 = $$.reg1;
+        $2.dest = get_mem_reg($$.dest);
+        $2.reg1 = get_mem_reg($$.reg1);
+    }
+    else if ($$.dest == $$.reg1){
+        $1.reg1 = $$.dest;
+        $1.reg2 = $$.reg2;
+        $2.dest = get_mem_reg($$.dest);
+        $2.reg1 = get_mem_reg($$.reg2);
+    }
+    if ($$.dest != $$.reg1 && $$.dest != $$.reg2){
+            revert;
+        }
+        $3.old1 = $$.dest;
+        $3.reg1 = get_mem_reg($$.dest);
+        release_mem_regs();
+};
+
+sub_r_r_t -> i_prologue,i_mov_r_r,i_load_mem,i_sub_r_r,i_store_mem{
+        if ($$.dest==$$.reg1 || $$.dest==$$.reg2){
+            revert;
+        }
+        $2.suffix = $$.suffix;
+        $4.suffix = $$.suffix;
+        $1.reg1 = get_mem_reg($$.dest);
+        $1.reg2 = get_mem_reg($$.reg1);
+        $1.old1 = $$.dest;
+        $1.old2 = $$.reg1;
+        $2.dest = get_mem_reg($$.dest);
+        $2.reg1 = get_mem_reg($$.reg1);
+        release_mem_reg($$.reg1);
+        $3.reg1 = get_mem_reg($$.reg2);
+        $3.old1 = $$.reg2;
+        $4.dest = get_mem_reg($$.dest);
+        $4.reg1 = get_mem_reg($$.reg2);
+        $5.old1 = $$.dest;
+        $5.reg1 = get_mem_reg($$.dest);
+        release_mem_regs();
+} | i_prologue,i_neg_r,i_add_r_r,i_neg_r,i_store_mem{
+    if ($$.dest != $$.reg1 || ($$.reg1 == $$.reg2)){
+        revert;
+    }
+        $2.suffix = $$.suffix;
+        $3.suffix = $$.suffix;
+        $4.suffix = $$.suffix;
+        $1.reg1 = $$.dest;
+        $1.old1 = $$.dest;
+        $1.old2 = $$.reg1;
+        $1.reg1 = get_mem_reg($$.dest);
+        $1.reg2 = get_mem_reg($$.reg2);
+        $2.reg1 = get_mem_reg($$.reg2);
+        $3.dest = get_mem_reg($$.dest);
+        $3.reg1 = get_mem_reg($$.reg2);
+        $4.reg1 = get_mem_reg($$.reg2);
+        $5.reg1 = get_mem_reg($$.dest);
+        $5.old1 = $$.dest;
+        release_mem_regs();
+} | i_prologue,i_neg_r,i_add_r_r,i_store_mem{
+        if ($$.dest!=$$.reg2 || ($$.reg1 == $$.reg2)){
+                revert;
+        }
+        $2.suffix = $$.suffix;
+        $3.suffix = $$.suffix;
+        $1.reg1 = get_mem_reg($$.dest);
+        $1.old1 = $$.dest;
+        $1.old2 = $$.reg2;
+        $1.reg2 = get_mem_reg($$.reg1);
+        $2.reg1 = $1.reg1;
+        $3.reg1 = $1.reg2;
+        $3.dest = $1.reg1;
+        $4.reg1 = $1.reg1;
+        $4.old1 = $1.old1;
+} | i_load_mem,i_sub_r_r,i_store_mem{
+        if (!($$.dest == $$.reg1 && $$.reg1 == $$.reg2)){
+                revert;
+        }
+        $2.suffix = $$.suffix;
+        $1.reg1 = get_mem_reg($$.dest);
+        $1.old1 = $$.dest;
+        $2.reg1 = $1.reg1;
+        $2.dest = $1.reg1;
+        $3.reg1 = $1.reg1;
+        $3.old1 = $1.old1;
+        release_mem_regs();
+};
+
+add_r_i_t -> i_prologue,i_mov_r_r,i_add_i_r,i_store_mem{
+        if ($$.dest == $$.reg1){
+            revert;
+        }
+        $2.suffix = $$.suffix;
+        $3.suffix = $$.suffix;
+        $1.old1 = $$.dest;
+        $1.old2 = $$.reg1;
+        $1.reg1 = get_mem_reg($$.dest);
+        $1.reg2 = get_mem_reg($$.reg1);
+        $2.dest = get_mem_reg($$.dest);
+        $2.reg1 = get_mem_reg($$.reg1);
+        $3.dest = get_mem_reg($$.dest);
+        $3.imm = $$.imm;
+        $4.reg1 = get_mem_reg($$.dest);
+        $4.old1 = $$.dest;
+        release_mem_regs();
+} | i_load_mem,i_add_i_r,i_store_mem{
+    
+        $2.suffix = $$.suffix;
+        if ($$.dest != $$.reg1){
+            revert;
+        }
+        $1.reg1 = get_mem_reg($$.dest);
+        $1.old1 = $$.dest;
+        $2.dest = get_mem_reg($$.dest);
+        $2.imm = $$.imm;
+        $3.old1 = $$.dest;
+        $3.reg1 = get_mem_reg($$.dest);
+        release_mem_regs();
+};
+
+load_dw_t -> i_prologue,i_mov_m_r,i_store_mem{
+        $2.suffix = $$.suffix;
+        $1.reg1 = get_mem_reg($$.dest);
+        $1.reg2 = get_mem_reg($$.base);
+        $1.old1 = $$.dest;
+        $1.old2 = $$.base;
+        $2.base = get_mem_reg($$.base);
+        $2.dest = get_mem_reg($$.dest);
+        $2.offset = $$.offset;
+        $3.reg1 = get_mem_reg($$.dest);
+        $3.old1 = $$.dest;
+        
+        release_mem_regs();
+};
+
+load_w_t -> i_prologue,i_mov_m_r,i_store_mem{
+        $2.suffix = $$.suffix;
+        $1.reg1 = get_mem_reg($$.dest);
+        $1.reg2 = get_mem_reg($$.base);
+        $1.old1 = $$.dest;
+        $1.old2 = $$.base;
+        $2.base = get_mem_reg($$.base);
+        $2.dest = get_mem_reg($$.dest);
+        $2.offset = $$.offset;
+        $3.reg1 = get_mem_reg($$.dest);
+        $3.old1 = $$.dest;
+        release_mem_regs();
+        
+};
+
+load_h_t -> i_prologue,i_mov_m_r,i_store_mem{
+        $2.suffix = $$.suffix;
+        $1.reg1 = get_mem_reg($$.dest);
+        $1.reg2 = get_mem_reg($$.base);
+        $1.old1 = $$.dest;
+        $1.old2 = $$.base;
+        $2.base = get_mem_reg($$.base);
+        $2.dest = get_mem_reg($$.dest);
+        $2.offset = $$.offset;
+        $3.reg1 = get_mem_reg($$.dest);
+        $3.old1 = $$.dest;
+        release_mem_regs();
+        
+};
+
+load_b_t -> i_prologue,i_mov_m_r,i_store_mem{
+        $2.suffix = $$.suffix;
+        $1.reg1 = get_mem_reg($$.dest);
+        $1.reg2 = get_mem_reg($$.base);
+        $1.old1 = $$.dest;
+        $1.old2 = $$.base;
+        $2.base = get_mem_reg($$.base);
+        $2.dest = get_mem_reg($$.dest);
+        $2.offset = $$.offset;
+        $3.reg1 = get_mem_reg($$.dest);
+        $3.old1 = $$.dest;
+        release_mem_regs();
+        
+};
+
+store_d_t -> i_prologue,i_mov_r_m{
+        $2.suffix = $$.suffix;
+        $1.reg1 = get_mem_reg($$.source);
+        $1.reg2 = get_mem_reg($$.base);
+        $1.old1 = $$.source;
+        $1.old2 = $$.base;
+        $2.base = get_mem_reg($$.base);
+        $2.src = get_mem_reg($$.source);
+        $2.offset = $$.offset;
+        release_mem_regs();
+};
+store_w_t -> i_prologue,i_mov_r_m{
+        $2.suffix = $$.suffix;
+        $1.reg1 = get_mem_reg($$.source);
+        $1.reg2 = get_mem_reg($$.base);
+        $1.old1 = $$.source;
+        $1.old2 = $$.base;
+        $2.base = get_mem_reg($$.base);
+        $2.src = get_mem_reg($$.source);
+        $2.offset = $$.offset;
+        release_mem_regs();
+};
+store_h_t -> i_prologue,i_mov_r_m{
+        $2.suffix = $$.suffix;
+        $1.reg1 = get_mem_reg($$.source);
+        $1.reg2 = get_mem_reg($$.base);
+        $1.old1 = $$.source;
+        $1.old2 = $$.base;
+        $2.base = get_mem_reg($$.base);
+        $2.src = get_mem_reg($$.source);
+        $2.offset = $$.offset;
+        release_mem_regs();
+};
+store_b_t -> i_prologue,i_mov_r_m{
+        $2.suffix = $$.suffix;
+        $1.reg1 = get_mem_reg($$.source);
+        $1.reg2 = get_mem_reg($$.base);
+        $1.old1 = $$.source;
+        $1.old2 = $$.base;
+        $2.base = get_mem_reg($$.base);
+        $2.src = get_mem_reg($$.source);
+        $2.offset = $$.offset;
+        release_mem_regs();
+};
+
+and_r_r_t -> i_prologue,i_mov_r_r,i_load_mem,i_and_r_r,i_store_mem{
+        $2.suffix = $$.suffix;
+        $4.suffix = $$.suffix;
+        if ($$.dest == $$.reg1 || $$.dest == $$.reg2){
+                revert;
+        }       
+        $1.reg1 = get_mem_reg($$.reg1);
+        $1.reg2 = get_mem_reg($$.dest);
+        $1.old1 = $$.reg1;
+        $1.old2 = $$.dest;
+        $2.dest = get_mem_reg($$.dest); 
+        $2.reg1 = get_mem_reg($$.reg1);
+        release_mem_reg($$.reg1);
+        $3.reg1 = get_mem_reg($$.reg2);
+        $3.old1 = $$.reg2;
+        $4.reg1 = get_mem_reg($$.reg2);
+        $4.dest = get_mem_reg($$.dest);
+        $5.reg1 = get_mem_reg($$.dest);
+        $5.reg1 = $$.dest;
+        release_mem_regs();
+        
+} | i_prologue,i_and_r_r,i_store_mem{
+        if (($$.dest != $$.reg1 && $$.dest != $$.reg2) || ($$.dest == $$.reg1 && $$.dest == $$.reg2)){
+                revert;
+        }
+        $2.suffix = $$.suffix;
+        if ($$.dest == $$.reg1){
+                $1.reg1 = get_mem_reg($$.dest);
+                $1.reg2 = get_mem_reg($$.reg2);
+                $1.old1 = $$.dest;
+                $1.old2 = $$.reg2;
+                $2.reg1 = $1.reg2;
+                $2.dest = $1.reg1;
+                $3.reg1 = $2.dest;
+                $3.old1 = $$.dest;
+        }
+        if ($$.dest == $$.reg2){
+                $1.reg1 = get_mem_reg($$.dest);
+                $1.reg2 = get_mem_reg($$.reg1);
+                $1.old1 = $$.dest;
+                $1.old2 = $$.reg1;
+                $2.reg1 = $1.reg2;
+                $2.dest = $1.reg1;
+                $3.reg1 = $2.dest;
+                $3.old1 = $$.dest;
+        }
+        release_mem_regs();
+} | nop{
+        if (!($$.dest == $$.reg1 && $$.dest == $$.reg2)){
+                revert;
+        }
+}; 
+
+and_r_i_t -> i_prologue,i_mov_r_r,i_and_i_r,i_store_mem{
+        if ($$.dest == $$.reg1){
+                revert;
+        }
+        $2.suffix = $$.suffix;
+        $3.suffix = $$.suffix;
+        $1.reg1 = get_mem_reg($$.dest);
+        $1.reg2 = get_mem_reg($$.reg1);
+        $1.old1 = $$.dest;
+        $1.old2 = $$.reg1;
+        $2.dest = $1.reg1;
+        $2.reg1 = $1.reg2;
+        $3.dest = $1.reg1;
+        $3.imm = $$.imm;
+        $4.reg1 = $1.reg1;
+        $4.old1 = $$.dest;
+        release_mem_regs();
+} | i_load_mem,i_and_i_r,i_store_mem{
+        if ($$.dest != $$.reg1){
+                revert;
+        }
+        $2.suffix = $$.suffix;
+        $1.reg1 = get_mem_reg($$.dest);
+        $1.old1 = $$.dest;
+        $2.dest = $1.reg1;
+        $2.imm = $$.imm;
+        $3.reg1 = $1.reg1;
+        $3.old1 = $$.dest;
+        release_mem_regs();
+};
+
+or_r_r_t -> i_prologue,i_mov_r_r,i_load_mem,i_or_r_r,i_store_mem{
+        if ($$.dest == $$.reg1 || $$.dest == $$.reg2){
+                revert;
+        }
+        $2.suffix = $$.suffix;
+        $4.suffix = $$.suffix;
+        $1.reg1 = get_mem_reg($$.reg1);
+        $1.reg2 = get_mem_reg($$.dest);
+        $1.old1 = $$.reg1;
+        $1.old2 = $$.dest;
+        $2.dest = get_mem_reg($$.dest); 
+        $2.reg1 = get_mem_reg($$.reg1);
+        release_mem_reg($$.reg1);
+        $3.reg1 = get_mem_reg($$.reg2);
+        $3.old1 = $$.reg2;
+        $4.reg1 = get_mem_reg($$.reg2);
+        $4.dest = get_mem_reg($$.dest);
+        $5.reg1 = get_mem_reg($$.dest);
+        $5.old1 = $$.dest;
+        release_mem_regs();
+        
+} | i_prologue,i_or_r_r,i_store_mem{
+
+        if (($$.dest != $$.reg1 && $$.dest != $$.reg2) || ($$.dest == $$.reg1 && $$.dest == $$.reg2)){
+                revert;
+        }
+        $2.suffix = $$.suffix;
+        if ($$.dest == $$.reg1){
+                $1.reg1 = get_mem_reg($$.dest);
+                $1.reg2 = get_mem_reg($$.reg2);
+                $1.old1 = $$.dest;
+                $1.old2 = $$.reg2;
+                $2.reg1 = $1.reg2;
+                $2.dest = $1.reg1;
+                $3.reg1 = $2.dest;
+                $3.old1 = $$.dest;
+        }
+        if ($$.dest == $$.reg2){
+                $1.reg1 = get_mem_reg($$.dest);
+                $1.reg2 = get_mem_reg($$.reg1);
+                $1.old1 = $$.dest;
+                $1.old2 = $$.reg1;
+                $2.reg1 = $1.reg2;
+                $2.dest = $1.reg1;
+                $3.reg1 = $2.dest;
+                $3.old1 = $$.dest;
+        }
+        release_mem_regs();
+} | nop{
+
+        if (!($$.dest == $$.reg1 && $$.dest == $$.reg2)){
+                revert;
+        }
+};
+
+or_r_i_t ->  i_prologue,i_mov_r_r,i_or_i_r,i_store_mem{
+        if ($$.dest == $$.reg1){
+                revert;
+        }
+        $2.suffix = $$.suffix;
+        $3.suffix = $$.suffix;
+        $1.reg1 = get_mem_reg($$.dest);
+        $1.reg2 = get_mem_reg($$.reg1);
+        $1.old1 = $$.dest;
+        $1.old2 = $$.reg1;
+        $2.dest = $1.reg1;
+        $2.reg1 = $1.reg2;
+        $3.dest = $1.reg1;
+        $3.imm = $$.imm;
+        $4.reg1 = $1.reg1;
+        $4.old1 = $$.dest;
+        release_mem_regs();
+} | i_load_mem,i_or_i_r,i_store_mem{
+        if ($$.dest != $$.reg1){
+                revert;
+        }
+        $2.suffix = $$.suffix;
+        $1.reg1 = get_mem_reg($$.dest);
+        $1.old1 = $$.dest;
+        $2.dest = $1.reg1;
+        $2.imm = $$.imm;
+        $3.reg1 = $1.reg1;
+        $3.old1 = $$.dest;
+        release_mem_regs();
+};
+
+xor_r_r_t -> i_prologue,i_mov_r_r,i_load_mem,i_xor_r_r,i_store_mem{
+
+        if ($$.dest == $$.reg1 || $$.dest == $$.reg2){
+                revert;
+        }
+        $2.suffix = $$.suffix;
+        $4.suffix = $$.suffix;
+        $1.reg1 = get_mem_reg($$.reg1);
+        $1.reg2 = get_mem_reg($$.dest);
+        $1.old1 = $$.reg1;
+        $1.old2 = $$.dest;
+        $2.dest = get_mem_reg($$.dest); 
+        $2.reg1 = get_mem_reg($$.reg1);
+        release_mem_reg($$.reg1);
+        $3.reg1 = get_mem_reg($$.reg2);
+        $3.old1 = $$.reg2;
+        $4.reg1 = get_mem_reg($$.reg2);
+        $4.dest = get_mem_reg($$.dest);
+        $5.reg1 = get_mem_reg($$.dest);
+        $5.old1 = $$.dest;
+        release_mem_regs();
+         
+} | i_prologue,i_xor_r_r,i_store_mem{
+        if ($$.dest != $$.reg1 && $$.dest != $$.reg2){
+                revert;
+        }
+        $2.suffix = $$.suffix;
+        if ($$.dest == $$.reg1){
+                $1.reg1 = get_mem_reg($$.dest);
+                $1.reg2 = get_mem_reg($$.reg1);
+                $1.old1 = $$.dest;
+                $1.old2 = $$.reg1;
+                $2.reg1 = $1.reg2;
+                $2.dest = $1.reg1;
+                $3.reg1 = $2.dest;
+                $3.old1 = $$.dest;
+        }
+        if ($$.dest == $$.reg2){
+                $1.reg1 = get_mem_reg($$.dest);
+                $1.reg2 = get_mem_reg($$.reg2);
+                $1.old1 = $$.dest;
+                $1.old2 = $$.reg2;
+                $2.reg1 = $1.reg2;
+                $2.dest = $1.reg1;
+                $3.reg1 = $2.dest;
+                $3.old1 = $$.dest;
+        }
+        if ($$.dest == $$.reg1 && $$.dest == $$.reg2){
+                $1.reg1 = get_mem_reg($$.dest);
+                $1.reg2 = get_mem_reg($$.dest);
+                $1.old1 = $$.dest;
+                $1.old2 = $$.dest;
+                $2.reg1 = $1.reg1;
+                $2.dest = $2.reg1;
+                $3.reg1 = $2.reg1;
+                $3.old1 = $$.dest;
+        }
+        release_mem_regs();
+};
+
+nor_r_r_t -> i_prologue,i_mov_r_r,i_load_mem,i_or_r_r,i_not_r,i_store_mem{
+        if ($$.dest == $$.reg1 || $$.dest == $$.reg2){
+                revert;
+        }
+        $2.suffix = $$.suffix;
+        $4.suffix = $$.suffix;
+        $5.suffix = $$.suffix;
+        $1.reg1 = get_mem_reg($$.dest);
+        $1.reg2 = get_mem_reg($$.reg1);
+        $1.old1 = $$.dest;
+        $1.old2 = $$.reg1;
+        $2.reg1 = $1.reg2;
+        $2.dest = $1.reg1;
+        release_mem_reg($1.reg2);
+        $3.reg1 = get_mem_reg($$.reg2);
+        $3.old1 = $$.reg2;
+        $4.reg1 = $3.reg1;
+        $4.dest = $2.dest;
+        $5.reg1 = $4.dest;
+        $6.reg1 = $4.dest;
+        $6.old1 = $$.dest;
+        release_mem_regs();
+} | i_prologue,i_or_r_r,i_not_r,i_store_mem{
+        if (($$.dest != $$.reg1 && $$.dest != $$.reg2) || ($$.dest == $$.reg1 && $$.dest == $$.reg2)){
+                revert;
+        }
+        $2.suffix = $$.suffix;
+        $3.suffix = $$.suffix;
+        if ($$.dest == $$.reg1){
+                $1.reg1 = get_mem_reg($$.dest);
+                $1.reg2 = get_mem_reg($$.reg1);
+                $1.old1 = $$.dest;
+                $1.old2 = $$.reg1;
+                $2.reg1 = $1.reg2;
+                $2.dest = $1.reg1;
+                $3.reg1 = $2.dest;
+                $4.reg1 = $2.dest;
+                $4.old1 = $$.dest;
+        }
+        if ($$.dest == $$.reg2){
+                $1.reg1 = get_mem_reg($$.dest);
+                $1.reg2 = get_mem_reg($$.reg2);
+                $1.old1 = $$.dest;
+                $1.old2 = $$.reg2;
+                $2.reg1 = $1.reg2;
+                $2.dest = $1.reg1;
+                $3.reg1 = $2.dest;
+                $4.reg1 = $2.dest;
+                $4.old1 = $$.dest;
+        }
+        release_mem_regs();
+} | i_load_mem,i_not_r,i_store_mem{
+        if ($$.dest != $$.reg1 || $$.dest != $$.reg2){
+                revert;
+        }
+        $2.suffix = $$.suffix;
+        $1.reg1 = get_mem_reg($$.dest);
+        $1.old1 = $$.dest;
+        $2.reg1 = $1.reg1;
+        $3.reg1 = $2.reg1;
+        $3.old1 = $$.dest;
+        release_mem_regs();
+};
+
+shift_l_t -> i_prologue,i_mov_r_r,i_shl_i_r,i_store_mem{
+        $2.suffix = $$.suffix;
+        $3.suffix = $$.suffix;
+        $1.reg1 = get_mem_reg($$.dest);
+        $1.reg2 = get_mem_reg($$.reg1);
+        $1.old1 = $$.dest;
+        $1.old2 = $$.reg1;
+        $2.reg1 = $1.reg2;
+        $2.dest = $1.reg1;
+        $3.reg1 = $2.dest;
+        $3.imm = $$.imm;
+        $4.reg1 = $3.reg1;
+        $4.old1 = $$.dest;
+        release_mem_regs();
+};
+
+shift_r_t -> i_prologue,i_mov_r_r,i_shr_i_r,i_store_mem{
+        $2.suffix = $$.suffix;
+        $3.suffix = $$.suffix;
+        $1.reg1 = get_mem_reg($$.dest);
+        $1.reg2 = get_mem_reg($$.reg1);
+        $1.old1 = $$.dest;
+        $1.old2 = $$.reg1;
+        $2.reg1 = $1.reg2;
+        $2.dest = $1.reg1;
+        $3.reg1 = $2.dest;
+        $3.imm = $$.imm;
+        $4.reg1 = $3.reg1;
+        $4.old1 = $$.dest;
+        release_mem_regs();
+};
+
+branch_eq_r_r_t -> i_prologue,i_cmp_r_r,i_jz{
+        $2.suffix = $$.suffix;
+        $1.reg1 = get_mem_reg($$.reg1);
+        $1.reg2 = get_mem_reg($$.reg2);
+        $1.old1 = $$.reg1;
+        $1.old2 = $$.reg2;
+        $2.reg1 = $1.reg1;
+        $2.reg2 = $1.reg2;
+        $3.text = $$.address;
+        release_mem_regs();
+};
+branch_neq_r_r_t -> i_prologue,i_cmp_r_r,i_jnz{
+        $2.suffix = $$.suffix;
+        $1.reg1 = get_mem_reg($$.reg1);
+        $1.reg2 = get_mem_reg($$.reg2);
+        $1.old1 = $$.reg1;
+        $1.old2 = $$.reg2;
+        $2.reg1 = $1.reg1;
+        $2.reg2 = $1.reg2;
+        $3.text = $$.address;
+        release_mem_regs();
+};
+jump_t -> i_jmp{
+        $1.text = $$.address;
+};
+jump_r_t -> i_load_mem,i_jmp_r{
+        if (strcmp($$.reg1,map_register("$ra",64)) == 0){
+                revert;
+        }
+        $1.reg1 = get_mem_reg($$.reg1);
+        $1.old1 = $$.reg1;
+        $2.reg1 = $1.reg1;
+        $2.suffix = $$.suffix;
+        release_mem_regs();
+} | i_ret {
+        if (strcmp($$.reg1,map_register("$ra",64)) != 0){
+                revert;
+        }
+};
+//call_t -> i_lea_m_r,i_jmp,code_label{
+//   $1.offset = create_label();
+//   $1.base = empty_string();
+//   $1.dest = ireg_values[13];
+//   $1.suffix = suf_values[0];
+//   $2.text = $$.address;
+//   $3.text = print_as_a_label($1.offset);
+//};
+call_t -> i_call {
+        $1.text = get_fun($$.address);
+};
+set_l_r_r_t -> i_prologue,i_cmp_r_r,i_jb,i_load_mem,i_mov_i_r,i_jmp,code_label,i_load_mem,i_mov_i_r,code_label,i_store_mem{
+        $2.suffix = $$.suffix;
+        $5.suffix = $$.suffix;
+        $9.suffix = $$.suffix;
+        $1.reg1 = get_mem_reg($$.reg1);
+        $1.reg2 = get_mem_reg($$.reg2);
+        $1.old1 = $$.reg1;
+        $1.old2 = $$.reg2;
+        $2.reg2 = $1.reg1;
+        $2.reg1 = $1.reg2;
+        release_mem_regs();
+        $3.text = create_label();
+        $4.reg1 = get_mem_reg($$.dest);
+        $4.old1 = $$.dest;
+        $5.imm = 0;
+        $5.dest = $4.reg1;
+        $6.text = create_label();
+        $7.text = print_as_a_label($3.text);
+        $8.reg1 = $4.reg1;
+        $9.dest = $8.reg1;
+        $9.imm = 1;
+        $10.text = print_as_a_label($6.text);
+        $11.reg1 = $8.reg1;
+        $11.old1 = $$.dest;
+        release_mem_regs();
+};
+set_l_r_i_t -> i_prologue,i_cmp_r_i,i_jb,i_mov_i_r,i_jmp,code_label,i_mov_i_r,code_label,i_store_mem{
+        $2.suffix = $$.suffix;
+        $4.suffix = $$.suffix;
+        $7.suffix = $$.suffix;
+        $1.reg1 = get_mem_reg($$.reg1);
+        $1.reg2 = get_mem_reg($$.dest);
+        $1.old1 = $$.reg1;
+        $1.old2 = $$.dest;
+        $2.reg1 = $1.reg1;
+        $2.imm = $$.imm;
+        $3.text = create_label();
+        $4.imm = 0;
+        $4.dest = $1.reg2;
+        $5.text = create_label();
+        $6.text = print_as_a_label($3.text);
+        $7.dest = $1.reg2;
+        $7.imm = 1;
+        $8.text = print_as_a_label($5.text);
+        $9.reg1 = $1.reg2;
+        $9.old1 = $$.dest;
+        release_mem_regs();
+};
+branch_gtz_c_t -> i_load_mem,i_cmp_r_r,i_ja{
+               $1.reg1 = get_mem_reg($$.reg1); 
+               $1.old1 = $$.reg1;
+               $2.suffix = suf_values[1]; 
+               $2.reg2 = $1.reg1;
+               $2.reg1 = map_register(reg_values[0],32);
+               $3.text = $$.target;
+               release_mem_regs();
+};
+branch_ge_c_t -> i_prologue,i_cmp_r_r,i_jae{
+        $1.reg1 = get_mem_reg($$.reg1);
+        $1.old1 = $$.reg1;
+        $1.reg2 = get_mem_reg($$.reg2);
+        $1.old2 = $$.reg2;
+        $2.reg2 = $1.reg1;
+        $2.reg1 = $1.reg2;
+        $2.suffix = suf_values[1];
+        $3.text = $$.target;
+        release_mem_regs();
+
+};
+branch_geu_c_t -> i_prologue,i_cmp_r_r,i_jae_u{
+        $1.reg1 = get_mem_reg($$.reg1);
+        $1.old1 = $$.reg1;
+        $1.reg2 = get_mem_reg($$.reg2);
+        $1.old2 = $$.reg2;
+        $2.reg2 = $1.reg1;
+        $2.reg1 = $1.reg2;
+        $2.suffix = suf_values[1];
+        $3.text = $$.target;
+        release_mem_regs();
+
+};
+branch_lt_c_t -> i_prologue,i_cmp_r_r,i_jb{
+        $1.reg1 = get_mem_reg($$.reg1);
+        $1.old1 = $$.reg1;
+        $1.reg2 = get_mem_reg($$.reg2);
+        $1.old2 = $$.reg2;
+        $2.reg2 = $1.reg1;
+        $2.reg1 = $1.reg2;
+        $2.suffix = suf_values[1];
+        $3.text = $$.target;
+        release_mem_regs();
+
+};
+branch_ltu_c_t -> i_prologue,i_cmp_r_r,i_jbu{
+        $1.reg1 = get_mem_reg($$.reg1);
+        $1.old1 = $$.reg1;
+        $1.reg2 = get_mem_reg($$.reg2);
+        $1.old2 = $$.reg2;
+        $2.reg2 = $1.reg1;
+        $2.reg1 = $1.reg2;
+        $2.suffix = suf_values[1];
+        $3.text = $$.target;
+        release_mem_regs();
+
+};
+shift_ra_t -> i_prologue,i_mov_r_r,i_sar_i_r,i_store_mem{
+        $1.reg1 = get_mem_reg($$.reg1);
+        $1.old1 = $$.reg1;
+        $1.reg2 = get_mem_reg($$.dest);
+        $1.old2 = $$.dest;
+        $2.dest = $1.reg2;
+        $2.reg1 = $1.reg1;
+        $2.suffix = suf_values[1];
+        $3.reg1 = $1.reg2;
+        $3.imm = $$.imm;
+        $3.suffix = suf_values[1];
+        $4.reg1 = $1.reg2;
+        $4.old1 = $$.dest;
+        release_mem_regs();
+};
+
+teq_t -> i_prologue,i_cmp_r_r,i_jnz,i_ud2,code_label{
+        $1.reg1 = get_mem_reg($$.reg1);
+        $1.old1 = $$.reg1;
+        $1.reg2 = get_mem_reg($$.reg2);
+        $1.old2 = $$.reg2;
+        $2.suffix = suf_values[1];
+        $2.reg1 = $1.reg1;
+        $2.reg2 = $1.reg2;
+        $3.text = create_label();
+        $5.text = $3.text;
+        release_mem_regs();
+};
+
+%%
+// Translation rules
+//64 bit ins
+
+dadd_r_r <-> add_r_r_t {
+        $1.reg1 = map_register($$.reg1,64);
+        $1.reg2 = map_register($$.reg2,64);
+        $1.dest = map_register($$.dest,64);
+        $1.suffix = suf_values[0];
+};
+
+
+daddu_r_r <-> add_r_r_t {
+        $1.reg1 = map_register($$.reg1,64);
+        $1.reg2 = map_register($$.reg2,64);
+        $1.dest = map_register($$.dest,64);
+        $1.suffix = suf_values[0];
+};
+lea_label <- lui_r_m,daddiu_r_m,dsll,daddiu_r_m,dsll,daddiu_r_m{
+        if (!(strcmp($1.lab,$2.lab) == 0  && strcmp($4.lab,$6.lab) == 0)){
+                revert;
+        }
+        $$.dest = map_register($6.dest,64);
+        $$.lab = $1.lab;
+        $$.suffix = suf_values[0];
+};
+load_data_label <- lui_r_m,daddiu_r_m,dsll,daddiu_r_m,dsll,load_dw_lab{
+        if (!(strcmp($1.lab,$2.lab) == 0  && strcmp($4.lab,$6.lab) == 0)){
+                revert;
+        }
+        $$.dest = map_register($6.dest,64);
+        $$.lab = $1.lab;
+        $$.base = empty_string();
+        $$.suffix = suf_values[0];
+};
+load_data_label <- lui_r_m,daddiu_r_m,dsll,daddiu_r_m,dsll,load_w_lab{
+        if (!(strcmp($1.lab,$2.lab) == 0  && strcmp($4.lab,$6.lab) == 0)){
+                revert;
+        }
+        $$.dest = map_register($6.dest,32);
+        $$.lab = $1.lab;
+        $$.base = empty_string();
+        $$.suffix = suf_values[1];
+};
+store_data_label <- lui_r_m,daddiu_r_m,dsll,daddiu_r_m,dsll,store_d_lab{
+        if (!(strcmp($1.lab,$2.lab) == 0  && strcmp($4.lab,$6.lab) == 0)){
+                revert;
+        }
+        $$.src = map_register($6.src,64);
+        $$.lab = $1.lab;
+        $$.base = empty_string();
+        $$.suffix = suf_values[0];
+};
+store_data_label <- lui_r_m,daddiu_r_m,dsll,daddiu_r_m,dsll,store_w_lab{
+        if (!(strcmp($1.lab,$2.lab) == 0  && strcmp($4.lab,$6.lab) == 0)){
+                revert;
+        }
+        $$.src = map_register($6.src,32);
+        $$.lab = $1.lab;
+        $$.base = empty_string();
+        $$.suffix = suf_values[1];
+};
+
+
+dadd_r_i <-> add_r_i_t {
+        
+        $1.reg1 = map_register($$.reg1,64);
+        $1.imm = byte_align($$.imm,16);
+        $1.dest = map_register($$.dest,64);
+        $1.suffix = suf_values[0];
+};
+
+daddu_r_i <-> add_r_i_t {
+        
+        $1.reg1 = map_register($$.reg1,64);
+        $1.imm = $$.imm;
+        $1.dest = map_register($$.dest,64);
+        $1.suffix = suf_values[0];
+};
+
+
+add_r_r <-> add_r_r_t {
+        $1.reg1 = map_register($$.reg1,32);
+        $1.reg2 = map_register($$.reg2,32);
+        $1.dest = map_register($$.dest,32);
+        $1.suffix = suf_values[1];
+
+};
+
+sub_r_r <-> sub_r_r_t {
+        $1.reg1 = map_register($$.reg1,32);
+        $1.reg2 = map_register($$.reg2,32);
+        $1.dest = map_register($$.dest,32);
+        $1.suffix = suf_values[1];
+
+};
+
+add_r_i <-> add_r_i_t {
+        
+        $1.reg1 = map_register($$.reg1,32);
+        $1.imm = $$.imm;
+        $1.dest = map_register($$.dest,32);
+        $1.suffix = suf_values[1];
+};
+
+mul_r_r <-> mul_r_r_t {
+        $1.reg1 = map_register($$.reg1,32);
+        $1.reg2 = map_register($$.reg2,32);
+        $1.dest = map_register($$.dest,32);
+        $1.suffix = suf_values[1];
+};
+
+div_r_r <-> div_r_r_t {
+        $1.reg1 = map_register($$.reg1,32);
+        $1.reg2 = map_register($$.reg2,32);
+        $1.dest = map_register($$.dest,32);
+        $1.suffix = suf_values[1];
+};
+
+load_dw <-> load_dw_t {
+        $1.dest = map_register($$.dest,64);
+        $1.offset = $$.offset;
+        $1.base = map_register($$.base,64);
+        $1.suffix = suf_values[0];
+};
+
+load_w <-> load_w_t {
+        
+        $1.dest = map_register($$.dest,32);
+        $1.offset = $$.offset;
+        $1.base = map_register($$.base,64);
+        $1.suffix = suf_values[1];
+};
+
+load_h <-> load_h_t {
+        
+        $1.dest = map_register($$.dest,16);
+        $1.offset = $$.offset;
+        $1.base = map_register($$.base,64);
+        $1.suffix = suf_values[2];
+
+};
+
+load_b <-> load_b_t {
+        
+        $1.dest = map_register($$.dest,8);
+        $1.offset = $$.offset;
+        $1.base = map_register($$.base,64);
+        $1.suffix = suf_values[3];
+
+};
+load_b_u <-> load_b_t {
+        
+        $1.dest = map_register($$.dest,8);
+        $1.offset = $$.offset;
+        $1.base = map_register($$.base,64);
+        $1.suffix = suf_values[3];
+
+};
+
+and_r_r <-> and_r_r_t {
+        $1.reg1 = map_register($$.reg1,32);
+        $1.reg2 = map_register($$.reg2,32);
+        $1.dest = map_register($$.dest,32);
+        $1.suffix = suf_values[1];
+};
+
+and_r_i <-> and_r_i_t {
+        
+        $1.reg1 = map_register($$.reg1,32);
+        $1.imm  = $$.imm;
+        $1.dest = map_register($$.dest,32);
+        $1.suffix = suf_values[1];
+};
+and_r_i_hex <-> and_r_i_t {
+        
+        $1.reg1 = map_register($$.reg1,32);
+        $1.imm  = $$.imm;
+        $1.dest = map_register($$.dest,32);
+        $1.suffix = suf_values[1];
+};
+
+or_r_r <-> or_r_r_t {
+
+        $1.reg1 = map_register($$.reg1,32);
+        $1.reg2 = map_register($$.reg2,32);
+        $1.dest = map_register($$.dest,32);
+        $1.suffix = suf_values[1];
+};
+
+or_r_i <-> or_r_i_t {
+
+        $1.reg1 = map_register($$.reg1,32);
+        $1.imm  = $$.imm;
+        $1.dest = map_register($$.dest,32);
+        $1.suffix = suf_values[1];
+
+};
+or_r_i_hex <-> or_r_i_t {
+
+        $1.reg1 = map_register($$.reg1,32);
+        $1.imm  = $$.imm;
+        $1.dest = map_register($$.dest,32);
+        $1.suffix = suf_values[1];
+
+};
+
+xor_r_r <-> xor_r_r_t {
+        
+        $1.reg1 = map_register($$.reg1,32);
+        $1.reg2 = map_register($$.reg2,32);
+        $1.dest = map_register($$.dest,32);
+        $1.suffix = suf_values[1];
+
+};
+
+store_d <-> store_d_t{
+
+        $1.source = map_register($$.source,64);
+        $1.base = map_register($$.base,64);
+        $1.offset = $$.offset;
+        $1.suffix = suf_values[0];
+};
+
+store_w <-> store_w_t{
+
+        $1.source = map_register($$.source,32);
+        $1.base = map_register($$.base,64);
+        $1.offset = $$.offset;
+        $1.suffix = suf_values[1];
+};
+
+store_h <-> store_h_t{
+
+        $1.source = map_register($$.source,16);
+        $1.base = map_register($$.base,64);
+        $1.offset = $$.offset;
+        $1.suffix = suf_values[2];
+};
+
+store_b <-> store_b_t{
+
+        $1.source = map_register($$.source,8);
+        $1.base = map_register($$.base,64);
+        $1.offset = $$.offset;
+        $1.suffix = suf_values[3];
+};
+move_h <-> move_h_t{
+        $1.dest = map_register($$.dest,64);
+        $1.suffix = suf_values[0];
+};
+move_l <-> move_l_t{
+
+        $1.dest = map_register($$.dest,64);
+        $1.suffix = suf_values[0];
+};
+nor_r_r <-> nor_r_r_t{
+        $1.reg1 = map_register($$.reg1,32);
+        $1.reg2 = map_register($$.reg2,32);
+        $1.dest = map_register($$.dest,32);
+        $1.suffix = suf_values[1];
+};
+
+shift_l <-> shift_l_t{
+        $1.reg1 = map_register($$.reg1,32);
+        $1.imm = $$.imm;
+        $1.dest = map_register($$.dest,32);
+        $1.suffix = suf_values[1];
+};
+shift_r <-> shift_r_t{
+        $1.reg1 = map_register($$.reg1,32);
+        $1.imm = $$.imm;
+        $1.dest = map_register($$.dest,32);
+        $1.suffix = suf_values[1];
+};
+branch_eq_r_r <-> branch_eq_r_r_t{
+        $1.reg1 = map_register($$.reg1,32);
+        $1.reg2 = map_register($$.reg2,32);
+        $1.address = $$.address;
+        $1.suffix = suf_values[1];
+};
+branch_eq_c <-> branch_eq_r_r_t{
+        $1.reg1 = map_register($$.reg1,32);
+        $1.reg2 = map_register($$.reg2,32);
+        $1.address = $$.target;
+        $1.suffix = suf_values[1];
+};
+branch_neq_r_r <-> branch_neq_r_r_t{
+        $1.reg1 = map_register($$.reg1,32);
+        $1.reg2 = map_register($$.reg2,32);
+        $1.address = $$.address;
+        $1.suffix = suf_values[1];
+};
+jump <-> jump_t{
+
+        $1.address = $$.address;
+
+};
+jump_r <-> jump_r_t{
+
+        $1.reg1 = map_register($$.reg1,64);
+        $1.suffix = suf_values[0];
+
+};
+call <-> call_t{
+
+       $1.address = $$.address; 
+
+};
+
+
+
+addu_r_r <-> add_r_r_t {
+        $1.reg1 = map_register($$.reg1,32);
+        $1.reg2 = map_register($$.reg2,32);
+        $1.dest = map_register($$.dest,32);
+
+        $1.suffix = suf_values[1];
+};
+addu_r_i <-> add_r_i_t {
+        
+        $1.reg1 = map_register($$.reg1,32);
+        $1.imm = $$.imm;
+        $1.dest = map_register($$.dest,32);
+        $1.suffix = suf_values[1];
+};
+set_l_r_i <-> set_l_r_i_t {
+        $1.reg1 = map_register($$.reg1,32);
+        $1.dest = map_register($$.dest,32);
+        $1.imm = $$.imm;
+        $1.suffix = suf_values[1];
+};
+
+move <-> i_mov_r_r {
+        $1.reg1 = map_register($$.src,64);
+        $1.dest = map_register($$.dest,64);
+        $1.suffix = suf_values[0];
+};
+
+
+seh <-> seh_t {
+        $1.reg1 = map_register($$.reg1,64);
+        $1.dest = map_register($$.dest,64);
+};
+
+jump_r_c <-> jump_r_t{
+
+        $1.reg1 = map_register($$.reg1,64);
+        $1.suffix = suf_values[0];
+
+};
+
+branch_neq_c <-> branch_neq_r_r_t{
+        $1.reg1 = map_register($$.reg1,32);
+        $1.reg2 = map_register($$.reg2,32);
+        $1.address = $$.target;
+        $1.suffix = suf_values[1];
+};
+
+balc <-> call_t{
+
+       $1.address = $$.target; 
+
+};
+
+branch_c <-> jump_t{
+        $1.address = $$.target;
+};
+
+branch_nez_c <-> branch_neq_r_r_t {
+        $1.reg1 = map_register($$.reg1,32);
+        $1.reg2 = map_register(reg_values[0],32);
+        $1.address = $$.target;
+        $1.suffix = suf_values[1];
+};
+
+branch_eqz_c <-> branch_eq_r_r_t {
+        $1.reg1 = map_register($$.reg1,32);
+        $1.reg2 = map_register(reg_values[0],32);
+        $1.address = $$.target;
+        $1.suffix = suf_values[1];
+};
+
+
+subu_r_r <-> sub_r_r_t {
+        $1.reg1 = map_register($$.reg1,32);
+        $1.reg2 = map_register($$.reg2,32);
+        $1.dest = map_register($$.dest,32);
+        $1.suffix = suf_values[1];
+};
+dsubu_r_r <-> sub_r_r_t {
+        $1.reg1 = map_register($$.reg1,64);
+        $1.reg2 = map_register($$.reg2,64);
+        $1.dest = map_register($$.dest,64);
+        $1.suffix = suf_values[0];
+};
+branch_gtz_c <-> branch_gtz_c_t {
+        $1.reg1 = map_register($$.reg1,32);
+        $1.target = $$.target;
+};
+branch_ge_c <-> branch_ge_c_t {
+        $1.reg1 = map_register($$.reg1,32);
+        $1.reg2 = map_register($$.reg2,32);
+        $1.target = $$.target;
+};
+branch_geu_c <-> branch_geu_c_t {
+        $1.reg1 = map_register($$.reg1,32);
+        $1.reg2 = map_register($$.reg2,32);
+        $1.target = $$.target;
+};
+branch_gez_c <-> branch_ge_c_t {
+        $1.reg1 = map_register($$.reg1,32);
+        $1.reg2 = map_register(reg_values[0],32);
+        $1.target = $$.target;
+
+};
+shift_ra <-> shift_ra_t {
+        $1.dest = map_register($$.dest,32);
+        $1.reg1 = map_register($$.reg1,32);
+        $1.imm = $$.imm;
+};
+branch_lt_c <-> branch_lt_c_t {
+        $1.reg1 = map_register($$.reg1,32);
+        $1.reg2 = map_register($$.reg2,32);
+        $1.target = $$.target;
+};
+branch_ltu_c <-> branch_ltu_c_t {
+        $1.reg1 = map_register($$.reg1,32);
+        $1.reg2 = map_register($$.reg2,32);
+        $1.target = $$.target;
+};
+dsrl <-> shift_r_t{
+        $1.reg1 = map_register($$.reg1,64);
+        $1.imm = $$.imm;
+        $1.dest = map_register($$.dest,64);
+        $1.suffix = suf_values[0];
+};
+dsll <-> shift_l_t{
+        $1.reg1 = map_register($$.reg1,64);
+        $1.imm = $$.imm;
+        $1.dest = map_register($$.dest,64);
+        $1.suffix = suf_values[0];
+};
+
+branch_ltz_c <-> branch_lt_c_t {
+        $1.reg1 = map_register($$.reg1,32);
+        $1.reg2 = map_register(reg_values[0],32);
+        $1.target = $$.target;
+};
+load_i <-> i_mov_i_r {
+        $1.dest = map_register($$.dest,32); 
+        $1.imm = $$.imm;
+        $1.suffix = suf_values[1];
+};
+
+teq <-> teq_t {
+        $1.reg1 = map_register($$.reg1,32);
+        $1.reg2 = map_register($$.reg2,32);
+};
+
+set_l_r_r_u <-> set_l_r_r_t{
+        $1.suffix = suf_values[1];
+        $1.reg1 = map_register($$.reg1,32);
+        $1.reg2 = map_register($$.reg2,32);
+        $1.dest = map_register($$.dest,32);
+
+};
+
+muh_r_r <-> muh_r_r_t{
+        
+        $1.reg1 = map_register($$.reg1,32);
+        $1.reg2 = map_register($$.reg2,32);
+        $1.dest = map_register($$.dest,32);
+        $1.suffix = suf_values[1];
+
+
+};
