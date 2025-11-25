@@ -87,7 +87,7 @@ int extract_rule(unsigned int sym_id){
         }
         if(c==0)
                 return -1;
-        srand(time(NULL)); 
+        //srand(time(NULL)); 
         return ids[(rand()%c)];
 }
 
@@ -111,12 +111,20 @@ unsigned int extract_terminal_rule(unsigned int sym_id){
                 printf("ERROR: No Terminal Rules for symbol %s\nTry to increase MAX_GROW_LEVEL\n",sym_to_id[sym_id]);
                 exit(EXIT_FAILURE);
         }
-        srand(time(NULL));
+        //srand(time(NULL));
         return terminals[rand()%(j)];
 }
 
 void exec_rule(unsigned int the_rule, void *lhs){
         rule_functions[the_rule](lhs);
+}
+
+char *to_terminal(void *sym){
+        int sym_id = get_sym_id(sym);
+        printf("Sym is: %d\n",sym_id);
+        int the_rule = extract_terminal_rule(sym_id);
+        exec_rule(the_rule,sym);
+        return dump();
 }
 
 int grow(){
@@ -140,6 +148,7 @@ int grow(){
                         the_rule = extract_terminal_rule(sym_id);
                 if(the_rule < 0)
                         continue;
+                printf("Running rule: %d\n",the_rule);
                 exec_rule(the_rule, el);
                 grow_level++;
         }

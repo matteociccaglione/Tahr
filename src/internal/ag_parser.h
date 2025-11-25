@@ -1,6 +1,6 @@
 #pragma once
 #include<stdio.h>
-#include <reduce.h>
+#include "reduce.h"
 #include<stdlib.h>
 #include<string.h>
 
@@ -17,3 +17,4 @@ extern void no_start_space(char *str);
 extern void set_in_file(char *file_name);
 extern int save_and_fix(void* sym,int n);
 extern void retrieve(void **out, int* n);
+unsigned long i_strtol(char *str);

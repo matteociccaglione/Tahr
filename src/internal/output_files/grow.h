@@ -1,6 +1,6 @@
 #pragma once
 #include "stack.h"
-#define MAX_GROW_LEVEL 300
+#define MAX_GROW_LEVEL 5
 #define is_queue_empty() head==NULL
 
 typedef struct grow_queue{
@@ -16,3 +16,4 @@ extern char* dequeue();
 extern char *dump();
 extern void* trans_sym(void *sym);
 extern int grow();
+extern char* to_terminal(void *sym);

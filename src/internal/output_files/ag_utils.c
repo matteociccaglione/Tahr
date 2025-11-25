@@ -20,6 +20,7 @@ void* sym_malloc(unsigned int size){
 
 int get_sym_id(void *sym){
         int id;
+        printf("Getting sym id\n");
         memcpy(&id,sym,sizeof(int));
         return (id & 0x7ffffff);
 }

@@ -251,7 +251,7 @@ int main(int argc, char **argv){
                 }
         }
         fwrite("%%",1,2,out);
-        fclose(out);
+        //fclose(out);
         out = fopen(out_parse_h,"w");
         in = fopen("./src/internal/resources/template.l","r");
         size = 0;
@@ -269,7 +269,8 @@ int main(int argc, char **argv){
         fwrite("%%",1,2,out);
         fwrite("\n",1,1,out);
         fclose(in);
-        free(buf);
+        if (strlen(buf)!=0)
+                free(buf);
         unsigned char flags[3] = {0x0,0x0,0x0};
         buf = gen_constant_sym_flex();
         fwrite(buf, 1, strlen(buf), out);
@@ -322,7 +323,7 @@ int main(int argc, char **argv){
        //         }
        // }
         fwrite("%%",1,2,out);
-        fclose(out);
+        //fclose(out);
         //Copy files
         out = fopen(out_stack,"w");
         build_path(in_stack,OUT_STACK,IN_DIR);

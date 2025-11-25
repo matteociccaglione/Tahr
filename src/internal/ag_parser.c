@@ -26,6 +26,14 @@ int parse(){
         return -1;
 }
 
+unsigned long i_strtol(char *str){
+        int base = 10;
+        if ((str[0] == '0' && (str[1] == 'x' || str[1] == 'X')) || (str[0] == '-' && str[1] == '0' && (str[2] == 'x' || str[2] == 'X')))
+                base = 16;
+        return strtol(str,NULL,base);
+        
+}
+
 void set_buffer(char *buf){
         buf_set = 1;
         yy_switch_to_buffer(yy_scan_string(buf));

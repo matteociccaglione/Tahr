@@ -13,7 +13,7 @@ char *to_str(void *data, char *type){
                 int comp_size = val;
                 if (comp_size < 0)
                         comp_size *=-1;
-                res = malloc(comp_size/10+1+10);
+                res = malloc(64);
                 sprintf(res,"%d",val);
         }
         if(strcmp(type,"float") == 0){
@@ -38,8 +38,8 @@ char *to_str(void *data, char *type){
                 long comp_size = val;
                 if (comp_size < 0)
                         comp_size*=-1;
-                res = malloc(comp_size/10+1+10);
-                sprintf(res,"%ld",val);
+                res = malloc(64);
+                sprintf(res,"0x%lx",val);
         }
         return res;
 }

@@ -25,7 +25,7 @@ char *gen_beg_def(){
 char *gen_red_header(){
         char *out;
 // Build header file for reduce.h
-        char template[] = "#pragma once\n#include <tahr.h>\n#define MAX_RED_SYM %d\n{$fun_def}";
+        char template[] = "#pragma once\n#include \"tahr.h\"\n#define MAX_RED_SYM %d\n{$fun_def}";
         char fun_def_template[] = "extern int from_{$rhs_list}_to_{$lhs}({$rhs_list_type});\n";
         char **fun_def_array = malloc(sizeof(char*) * idx_red_rules);
         int fun_def_array_len = 0;
@@ -110,7 +110,7 @@ char *gen_red_header(){
 char *gen_red_function(){
         char *out;
 // Build file reduce.c with a function for each reduce rule defined
-        char template[] = "#include <reduce.h>\n#include <ag_parser.h>\n{$code}"; 
+        char template[] = "#include \"reduce.h\"\n#include \"ag_parser.h\"\n{$code}"; 
         char fun_def_template[] = "int from_{$rhs_list}_to_{$lhs}({$rhs_list_type}){\n\t{$fun_code}\n}";
         char **code_array = malloc(idx_red_rules * sizeof(char*));
         int fun_def_len = 0;
@@ -492,7 +492,7 @@ char *gen_constant_sym(){
 char *gen_sym_alloc_code(symbol_t *sym, char *code_body, int nmember, symbol_t *orig_sym){
         char template[] = "{$name}_t *res = malloc(sizeof({$name}_t));\n{$init_code}\nsymbol_init(res,\"%s\",0);\n";
         char template_init[] = "res->{$att} = {$init};\n";
-        char from_str_to_l[] = "strtol({$str},NULL,10)";
+        char from_str_to_l[] = "i_strtol({$str})";
         char **init = malloc(sizeof(char *)*nmember);
         int c = 0; 
         char **arr = split(code_body, ' ');
